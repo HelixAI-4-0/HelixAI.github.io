@@ -1,4 +1,4 @@
-Welcome to
+Welcome to:
 # Helix AI
 
 <p align="left">
