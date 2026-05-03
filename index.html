@@ -397,7 +397,7 @@ html,body { height:100%; width:100%; font-family:var(--font-sans); background:va
 @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
 @keyframes themeShift { from{filter:saturate(0)} to{filter:saturate(1)} }
 @keyframes imgLoad { from{opacity:0;transform:scale(0.97)} to{opacity:1;transform:scale(1)} }
-.msg-anim { animation:fadeSlide 0.28s ease; }
+.msg-anim { animation:fadeSlide 0.28s ease; width:100%; }
 body.theme-shifting { animation:themeShift 0.4s ease; }
 .gen-img-wrap img { animation:imgLoad 0.4s ease; }
 
@@ -678,7 +678,7 @@ body.theme-shifting { animation:themeShift 0.4s ease; }
 .chat-del-btn svg { width:14px; height:14px; }
 
 /* ─── USER MESSAGE ACTIONS ─── */
-.msg-user-wrap { display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
+.msg-user-wrap { display:flex; flex-direction:column; align-items:flex-end; gap:5px; width:100%; }
 .user-actions {
   display:flex; align-items:center; gap:6px;
   opacity:0; pointer-events:none;
@@ -936,6 +936,9 @@ body.theme-shifting { animation:themeShift 0.4s ease; }
       <span class="pill-name" id="pillName">Quar</span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
     </button>
+    <button class="ghost-icon" onclick="openArena()" title="Arena mode" style="color:var(--accent)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    </button>
     <button class="ghost-icon" onclick="newChat()" title="New chat">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="10" y1="11" x2="14" y2="11"/>
@@ -1056,6 +1059,13 @@ body.theme-shifting { animation:themeShift 0.4s ease; }
     </div>
 
     <!-- Memories -->
+    <div class="settings-group">
+      <div class="settings-row" onclick="promptChangeName()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <div class="settings-row-text"><div class="settings-row-label">Your name</div><div class="settings-row-sub" id="settingsNameVal">Tap to change</div></div>
+        <div class="settings-row-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+    </div>
     <div class="settings-group" id="memoriesSection">
       <div class="settings-row" style="cursor:default">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
@@ -1195,7 +1205,7 @@ const MODELS = {
   'Azur': {
     display:'Azur',
     hfModel:'Qwen/Qwen3-30B-A3B',
-    puterModel:'claude-haiku-4-5',
+    puterModel:'claude-sonnet-4-6',
     system:`Your name is Azur. You are a fast, precise AI assistant. You answer concisely and accurately. You think before responding but keep answers focused and direct.`,
     theme:{ bg:'#090c14', bg2:'#0d1220', bg3:'#111828', surface:'#161e30', surface2:'#1c2640', border:'#223050', accent:'#3b82f6', accent2:'#60a5fa', accentRgb:'59,130,246', text:'#eef2ff', text2:'#8ba5e0', text3:'#4a5f8a', logo:'#3b82f6' },
     icon:'◈', nameColor:'#60a5fa', swatchBg:'rgba(59,130,246,0.15)', swatchColor:'#3b82f6',
@@ -1204,7 +1214,7 @@ const MODELS = {
   'Pyre': {
     display:'Pyre',
     hfModel:'lordx64/Qwen3.6-35B-A3B-Claude-4.7-Opus-Reasoning-Distilled',
-    puterModel:'claude-opus-4-6',
+    puterModel:'claude-sonnet-4-6',
     system:`Your name is Pyre. You are a powerful AI built for complex reasoning. You work through problems step by step. You are thorough, analytical, and precise.`,
     theme:{ bg:'#110a0a', bg2:'#1a0e0e', bg3:'#201414', surface:'#2a1818', surface2:'#351e1e', border:'#422424', accent:'#ef4444', accent2:'#f87171', accentRgb:'239,68,68', text:'#fff1f0', text2:'#b08080', text3:'#6a4040', logo:'#ef4444' },
     icon:'◉', nameColor:'#f87171', swatchBg:'rgba(239,68,68,0.15)', swatchColor:'#ef4444',
@@ -1213,7 +1223,7 @@ const MODELS = {
   'Quar': {
     display:'Quar',
     hfModel:'Qwen/Qwen2.5-72B-Instruct',
-    puterModel:'claude-sonnet-4-6',
+    puterModel:'claude-opus-4-6',
     system:`Your name is Quar. You are a balanced AI assistant. You produce high-quality, well-structured responses. You are reliable, accurate, and clear.`,
     theme:{ bg:'#0e0e0e', bg2:'#151515', bg3:'#1c1c1c', surface:'#222222', surface2:'#2a2a2a', border:'#333333', accent:'#d4d4d4', accent2:'#efefef', accentRgb:'212,212,212', text:'#f5f5f5', text2:'#888888', text3:'#555555', logo:'#d4d4d4' },
     icon:'◇', nameColor:'#efefef', swatchBg:'rgba(212,212,212,0.12)', swatchColor:'#d4d4d4',
@@ -1262,8 +1272,8 @@ let isPuterPro     = false; // true when signed in to Puter
 let selectedVoiceId = ls('selectedVoiceId', 'se_brian');
 let testingVoiceId  = null;
 let testAudio       = null;
-let uiLang          = ls('uiLang', 'it');
-let sttLang         = ls('sttLang', 'it-IT');
+let uiLang          = ls('uiLang', 'en');
+let sttLang         = ls('sttLang', 'en-US');
 
 // ── i18n ──────────────────────────────────────
 const I18N = {
@@ -1394,6 +1404,21 @@ function updateUserUI() {
   const nl = document.getElementById('userNameSidebar');
   if (el) el.textContent = initials;
   if (nl) nl.textContent = name || 'You';
+  // Update settings name row
+  const sn = document.getElementById('settingsNameVal');
+  if (sn) sn.textContent = name || 'Not set';
+}
+
+function promptChangeName() {
+  const current = getUserName() || '';
+  const newName = window.prompt('Enter your name:', current);
+  if (newName === null) return; // cancelled
+  const trimmed = newName.trim();
+  setUserName(trimmed || null);
+  updateUserUI();
+  setGreeting();
+  buildSystemPrompt && showToast(trimmed ? `Name set to ${trimmed}` : 'Name cleared');
+  haptic && haptic();
 }
 
 /* ══════════════════════════════════════════
@@ -2020,21 +2045,19 @@ function isImageRequest(text) {
     || /\b(image|picture|photo|drawing|illustration)\b.{0,20}\b(of|showing|with)\b/i.test(text)
     || /^(draw|paint|imagine|generate|create)\s/i.test(text.trim());
 }
+
+/* Image generation requires Helix PRO (Puter sign-in).
+   All models are PRO-only — uses puter.ai.txt2img under the hood. */
 async function generateImage(prompt) {
-  const headers = { 'Content-Type':'application/json' };
-  if (hfToken) headers['Authorization'] = `Bearer ${hfToken}`;
-  const res = await fetch(HF_IMG_BASE + HF_IMG_MODEL, {
-    method:'POST',
-    headers,
-    body: JSON.stringify({ inputs: prompt, parameters:{ width:768, height:768 } }),
-    signal: abortController ? abortController.signal : undefined
-  });
-  if (!res.ok) {
-    // Fallback to Pollinations if HF fails (no token, rate limit etc.)
-    return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=flux&nologo=true&width=768&height=768`;
+  // Must be signed in to Puter (Helix PRO)
+  let signedIn = false;
+  try { signedIn = puter.auth.isSignedIn(); } catch(e) {}
+  if (!signedIn || !isPuterPro) {
+    throw new Error('PRO_REQUIRED');
   }
-  const blob = await res.blob();
-  return URL.createObjectURL(blob);
+  // Generate via Puter.js — returns an <img> element
+  const imgEl = await puter.ai.txt2img(prompt, { model: 'gpt-image-1', quality: 'medium' });
+  return imgEl.src;
 }
 
 /* ══════════════════════════════════════════
@@ -2118,7 +2141,9 @@ function buildSystemPrompt(modelName) {
   let extra = ARTIFACT_SYSTEM;
   if (name) extra += `\n\nThe user's name is ${name}.`;
   if (mems.length > 0) extra += '\n\nKnown facts about this user:\n' + mems.map(m => `- ${m}`).join('\n');
-  return base + extra;
+  // Always identify as Helix regardless of underlying model
+  const identityOverride = `IMPORTANT IDENTITY RULE: Your name is always Helix. You are Helix, an AI assistant. Never say you are Claude, GPT, Qwen, or any other model name. If asked who made you or what you are, say you are Helix. Do not reveal the underlying model powering you.\n\n`;
+  return identityOverride + base + extra;
 }
 
 /* ══════════════════════════════════════════
@@ -2467,7 +2492,10 @@ async function sendMsg() {
       removeTyping(); addImageMsg(imgUrl, txt);
     } catch (err) {
       removeTyping();
-      if (err.name !== 'AbortError') addError(err.message);
+      if (err.name !== 'AbortError') {
+        if (err.message === 'PRO_REQUIRED') addProRequiredMsg();
+        else addError(err.message);
+      }
     }
     isTyping = false; abortController = null; showStopBtn(false);
     return;
@@ -2717,6 +2745,27 @@ function addError(msg) {
   const d = document.createElement('div');
   d.className = 'msg-anim';
   d.innerHTML = `<div class="error-msg"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>${escHtml(msg)}</div>`;
+  c.appendChild(d); scrollBottom();
+}
+
+function addProRequiredMsg() {
+  const c = document.getElementById('messages');
+  const d = document.createElement('div');
+  d.className = 'msg-anim';
+  const logo = miniLogoSVG(MODELS[currentModel].theme.logo);
+  d.innerHTML = `<div class="msg-ai">
+    <div class="ai-dot">${logo}</div>
+    <div class="ai-content">
+      <div class="ai-text" style="font-family:var(--font-sans);font-size:15px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <strong style="color:var(--accent)">Helix PRO required</strong>
+        </div>
+        <p style="color:var(--text2);line-height:1.55">Image generation is a <strong style="color:var(--text)">Helix PRO</strong> feature. Sign in with your free Puter account to unlock it.</p>
+        <button onclick="closeSidebar();goSettings();" style="margin-top:10px;padding:9px 20px;border-radius:12px;border:none;background:var(--accent);color:white;font-family:var(--font-sans);font-size:14px;font-weight:600;cursor:pointer;">Go to Settings → Sign in</button>
+      </div>
+    </div>
+  </div>`;
   c.appendChild(d); scrollBottom();
 }
 
@@ -3478,9 +3527,11 @@ async function vmodeConfirm() {
   addUserMsg(txt, null, true);
 
   try {
-    const reply = await callAPI(txt, null, null);
+    const reply = await callAPI(txt, null, (delta, full) => {
+      // streaming keeps the connection alive; we just accumulate silently
+    });
     // Note: callAPI already pushed to conversationHistory
-    addMsg('ai', reply, true);
+    addMsg('ai', reply, false); // false = scroll into view so user can see response
     saveCurrentChat();
 
     // Switch to speaking state
@@ -3549,33 +3600,47 @@ async function _vmSpeak(text) {
     if (url) {
       const audio = new Audio(url);
       window._vmCurrentAudio = audio;
-      audio.onended  = () => { try { if (url.startsWith('blob:')) URL.revokeObjectURL(url); } catch(e){} _done(); };
-      audio.onerror  = () => { try { if (url.startsWith('blob:')) URL.revokeObjectURL(url); } catch(e){} _done(); };
+      let _audioDone = false;
+      const _audioResolve = () => {
+        if (_audioDone) return; _audioDone = true;
+        window._vmCurrentAudio = null;
+        try { if (url.startsWith('blob:')) URL.revokeObjectURL(url); } catch(e){}
+        _done();
+      };
+      audio.onended  = _audioResolve;
+      audio.onerror  = _audioResolve;
       audio.play().catch(() => {
         // play() blocked — use WebSpeech
+        _audioResolve(); // release the Audio object
         const SS = window.speechSynthesis;
         if (SS) {
           SS.cancel();
           const utt = new SpeechSynthesisUtterance(text.slice(0, 300));
           utt.lang = sttLang || 'it-IT';
-          utt.onend = _done; utt.onerror = _done;
+          let _wsDone = false;
+          const _wsResolve = () => { if (!_wsDone) { _wsDone = true; resolve(); } };
+          utt.onend = _wsResolve; utt.onerror = _wsResolve;
           SS.speak(utt);
-        } else { _done(); }
+          const estMs = Math.max(3000, text.split(' ').length * 400);
+          setTimeout(_wsResolve, estMs + 2000);
+        } else { resolve(); }
       });
     } else {
-      // All network TTS failed — always try WebSpeech
+      // All network TTS failed — try WebSpeech
       const SS = window.speechSynthesis;
       if (SS) {
         SS.cancel();
         const utt = new SpeechSynthesisUtterance(text.slice(0, 300));
         utt.lang = sttLang || 'it-IT';
-        utt.onend   = _done;
-        utt.onerror = () => { console.warn('[vmSpeak] WebSpeech failed too'); _done(); };
+        let _wsDone = false;
+        const _wsResolve = () => { if (!_wsDone) { _wsDone = true; _done(); } };
+        utt.onend   = _wsResolve;
+        utt.onerror = () => { console.warn('[vmSpeak] WebSpeech failed too'); _wsResolve(); };
         SS.speak(utt);
-        // Android bug: sometimes onend never fires — force resolve after estimated duration
+        // Android/mobile bug: onend sometimes never fires — force-resolve after estimated time
         const wordCount = text.split(' ').length;
         const estimatedMs = Math.max(3000, wordCount * 400);
-        setTimeout(() => { if (window._vmCurrentAudio === null) return; _done(); }, estimatedMs + 2000);
+        setTimeout(_wsResolve, estimatedMs + 2000);
       } else { _done(); }
     }
   });
@@ -3731,6 +3796,303 @@ function showToast(msg) {
 ══════════════════════════════════════════ */
 if (typeof marked !== 'undefined') {
   marked.setOptions({ breaks:true, gfm:true });
+}
+</script>
+<style>
+/* ── ARENA MODE ── */
+.arena-overlay {
+  position:fixed; inset:0; z-index:950;
+  background:var(--bg);
+  display:flex; flex-direction:column;
+  transform:translateY(100%);
+  transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+.arena-overlay.open { transform:translateY(0); }
+.arena-topbar {
+  height:52px; min-height:52px; display:flex; align-items:center;
+  padding:0 14px; gap:10px; border-bottom:1px solid var(--border); flex-shrink:0;
+}
+.arena-title {
+  flex:1; font-family:var(--font-sans); font-size:17px; font-weight:700;
+  display:flex; align-items:center; gap:8px;
+}
+.arena-title-badge {
+  font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+  padding:2px 8px; border-radius:20px; background:rgba(var(--accentRgb),0.15);
+  color:var(--accent); border:1px solid rgba(var(--accentRgb),0.3);
+}
+.arena-body {
+  flex:1; overflow-y:auto; padding:14px 14px 8px; display:flex; flex-direction:column; gap:12px;
+}
+.arena-body::-webkit-scrollbar { display:none; }
+.arena-cards {
+  display:grid; grid-template-columns:1fr 1fr; gap:10px;
+}
+.arena-card {
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:14px; overflow:hidden; display:flex; flex-direction:column;
+  min-height:140px; transition:border-color 0.3s;
+}
+.arena-card.loading { border-color:var(--accent); animation:arenaCardPulse 1.4s ease-in-out infinite; }
+.arena-card.done { border-color:rgba(var(--accentRgb),0.35); }
+@keyframes arenaCardPulse {
+  0%,100%{box-shadow:none} 50%{box-shadow:0 0 14px rgba(var(--accentRgb),0.18)}
+}
+.arena-card-header {
+  display:flex; align-items:center; gap:8px;
+  padding:10px 12px 8px; border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.arena-card-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.arena-card-name {
+  font-family:var(--font-sans); font-size:13px; font-weight:700; flex:1;
+}
+.arena-card-status {
+  font-family:var(--font-sans); font-size:10px; color:var(--text3);
+  letter-spacing:0.05em; text-transform:uppercase;
+}
+.arena-card-body {
+  flex:1; padding:10px 12px; overflow-y:auto;
+  font-family:var(--font-serif); font-size:13px; line-height:1.65; color:var(--text);
+}
+.arena-card-body::-webkit-scrollbar { display:none; }
+.arena-card-body p { margin-bottom:6px; }
+.arena-card-body p:last-child { margin-bottom:0; }
+.arena-card-body .typing-dot { padding:4px 0; }
+.arena-card-body .typing-dot span { width:5px; height:5px; }
+.arena-prompt-bar {
+  padding:10px 14px 28px; flex-shrink:0;
+  border-top:1px solid var(--border);
+}
+.arena-input-pill {
+  background:var(--bg2); border-radius:20px; border:1px solid var(--border);
+  display:flex; align-items:center; gap:8px; padding:10px 14px;
+  transition:border-color 0.2s;
+}
+.arena-input-pill:focus-within { border-color:var(--accent); }
+.arena-input-pill textarea {
+  flex:1; border:none; outline:none; background:transparent;
+  color:var(--text); font-family:var(--font-sans); font-size:15px;
+  resize:none; line-height:1.4; max-height:100px;
+}
+.arena-input-pill textarea::placeholder { color:var(--text3); }
+.arena-send-btn {
+  width:38px; height:38px; border-radius:50%; border:none;
+  background:var(--accent); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; opacity:0.45; transition:opacity 0.15s, transform 0.1s;
+  flex-shrink:0;
+}
+.arena-send-btn.ready { opacity:1; }
+.arena-send-btn:active { transform:scale(0.92); }
+.arena-send-btn svg { width:16px; height:16px; }
+.arena-empty {
+  flex:1; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:10px; color:var(--text3);
+  font-family:var(--font-sans); font-size:14px; text-align:center; padding:20px;
+}
+.arena-empty svg { width:40px; height:40px; opacity:0.35; }
+</style>
+
+<!-- ══ ARENA MODE OVERLAY ══ -->
+<div class="arena-overlay" id="arenaOverlay">
+  <div class="arena-topbar">
+    <button class="tb-icon" onclick="closeArena()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="arena-title">
+      Arena
+      <span class="arena-title-badge">All models</span>
+    </div>
+    <button class="tb-icon" onclick="arenaClear()" title="Clear">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+    </button>
+  </div>
+  <div class="arena-body" id="arenaBody">
+    <div class="arena-empty" id="arenaEmpty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <div>Send a prompt to see all<br>models respond at once</div>
+    </div>
+    <div class="arena-cards" id="arenaCards" style="display:none"></div>
+  </div>
+  <div class="arena-prompt-bar">
+    <div class="arena-input-pill">
+      <textarea id="arenaInput" placeholder="Ask all models…" rows="1"
+        oninput="arenaInputChange(this)" onkeydown="arenaInputKey(event)"></textarea>
+      <button class="arena-send-btn" id="arenaSendBtn" onclick="arenaSubmit()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════
+   ARENA MODE
+══════════════════════════════════════════ */
+let arenaRunning = false;
+
+function openArena() {
+  document.getElementById('arenaOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('arenaInput').focus(), 350);
+  haptic && haptic();
+}
+function closeArena() {
+  document.getElementById('arenaOverlay').classList.remove('open');
+}
+function arenaClear() {
+  document.getElementById('arenaEmpty').style.display = 'flex';
+  document.getElementById('arenaCards').style.display = 'none';
+  document.getElementById('arenaCards').innerHTML = '';
+  arenaRunning = false;
+  haptic && haptic();
+}
+function arenaInputChange(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+  document.getElementById('arenaSendBtn').classList.toggle('ready', el.value.trim().length > 0);
+}
+function arenaInputKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); arenaSubmit(); }
+}
+
+async function arenaSubmit() {
+  const inp = document.getElementById('arenaInput');
+  const prompt = inp.value.trim();
+  if (!prompt || arenaRunning) return;
+  inp.value = ''; inp.style.height = 'auto';
+  document.getElementById('arenaSendBtn').classList.remove('ready');
+  arenaRunning = true;
+
+  document.getElementById('arenaEmpty').style.display = 'none';
+  const cardsEl = document.getElementById('arenaCards');
+  cardsEl.style.display = 'grid';
+
+  const modelNames = Object.keys(MODELS);
+  // Build cards
+  cardsEl.innerHTML = modelNames.map(name => {
+    const m = MODELS[name];
+    const accent = m.theme.accent;
+    return `<div class="arena-card loading" id="arenaCard_${name}">
+      <div class="arena-card-header">
+        <div class="arena-card-dot" style="background:${accent}; box-shadow:0 0 5px ${accent}"></div>
+        <span class="arena-card-name" style="color:${accent}">${name}</span>
+        <span class="arena-card-status" id="arenaStatus_${name}">…</span>
+      </div>
+      <div class="arena-card-body" id="arenaBody_${name}">
+        <div class="typing-dot"><span></span><span></span><span></span></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const sysPrompt = `IMPORTANT IDENTITY RULE: Your name is always Helix. You are Helix, an AI assistant. Never reveal your underlying model name.\n\n`;
+
+  // Fire all models in parallel
+  const calls = modelNames.map(name => _arenaCallModel(name, prompt, sysPrompt));
+  await Promise.allSettled(calls);
+  arenaRunning = false;
+  haptic && haptic();
+}
+
+async function _arenaCallModel(modelName, prompt, identityPrefix) {
+  const m = MODELS[modelName];
+  const bodyEl = document.getElementById(`arenaBody_${modelName}`);
+  const cardEl = document.getElementById(`arenaCard_${modelName}`);
+  const statusEl = document.getElementById(`arenaStatus_${modelName}`);
+  const messages = [
+    { role: 'system', content: identityPrefix + m.system },
+    { role: 'user', content: prompt }
+  ];
+
+  let full = '';
+  statusEl.textContent = 'thinking';
+
+  function onChunk(delta, accumulated) {
+    full = accumulated;
+    try {
+      bodyEl.innerHTML = marked.parse(full) + '<span class="streaming-cursor"></span>';
+    } catch(e) { bodyEl.textContent = full; }
+    document.getElementById('arenaBody').scrollTop = document.getElementById('arenaBody').scrollHeight;
+  }
+
+  try {
+    // Try Puter if signed in
+    let reply = null;
+    if (typeof puter !== 'undefined' && puter?.ai?.chat) {
+      try {
+        const signedIn = await puter.auth.isSignedIn().catch(() => false);
+        if (signedIn) {
+          reply = await _callPuter(messages, true, onChunk, null);
+        }
+      } catch(e) { reply = null; }
+    }
+    // HuggingFace
+    if (reply === null) {
+      try { reply = await _callHF_arena(messages, m.hfModel, onChunk); } catch(e) { reply = null; }
+    }
+    // Pollinations fallback
+    if (reply === null) {
+      reply = await _callPollinations_arena(messages, onChunk);
+    }
+
+    try { bodyEl.innerHTML = marked.parse(reply || '(no response)'); } catch(e) { bodyEl.textContent = reply || '(no response)'; }
+    statusEl.textContent = 'done';
+    cardEl.classList.remove('loading');
+    cardEl.classList.add('done');
+  } catch(e) {
+    bodyEl.innerHTML = `<span style="color:var(--red);font-family:var(--font-sans);font-size:12px">Error: ${escHtml(e.message)}</span>`;
+    statusEl.textContent = 'error';
+    cardEl.classList.remove('loading');
+  }
+}
+
+async function _callHF_arena(messages, hfModel, onChunk) {
+  const res = await fetch(HF_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${hfToken}` },
+    body: JSON.stringify({ model: hfModel, messages, max_tokens: 1024, stream: true, temperature: 0.7 })
+  });
+  if (!res.ok) throw new Error('HF ' + res.status);
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '', full = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const lines = buf.split('\n'); buf = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const raw = line.slice(6).trim();
+      if (raw === '[DONE]') continue;
+      try { const d = JSON.parse(raw).choices?.[0]?.delta?.content || ''; if (d) { full += d; onChunk(d, full); } } catch(e) {}
+    }
+  }
+  return full;
+}
+
+async function _callPollinations_arena(messages, onChunk) {
+  const res = await fetch('https://text.pollinations.ai/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages, model: 'openai', stream: true, private: true })
+  });
+  if (!res.ok) throw new Error('Pollinations ' + res.status);
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '', full = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const lines = buf.split('\n'); buf = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const raw = line.slice(6).trim();
+      if (raw === '[DONE]') continue;
+      try { const d = JSON.parse(raw).choices?.[0]?.delta?.content || ''; if (d) { full += d; onChunk(d, full); } } catch(e) {}
+    }
+  }
+  return stripPollinationsAd(full);
 }
 </script>
 </body>
