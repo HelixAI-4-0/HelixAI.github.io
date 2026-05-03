@@ -417,6 +417,7 @@ body.theme-shifting { animation:themeShift 0.4s ease; }
 .search-pill { display:inline-flex; align-items:center; gap:5px; padding:5px 11px; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--text3); font-family:var(--font-sans); font-size:12px; font-weight:500; cursor:pointer; transition:all 0.15s; flex-shrink:0; }
 .search-pill:active { background:var(--surface); }
 .search-pill.on { border-color:rgba(var(--accentRgb),0.5); color:var(--accent); background:rgba(var(--accentRgb),0.08); }
+.search-pill.pro-search { border-color:rgba(212,113,74,0.6); color:#d4714a; background:rgba(212,113,74,0.1); }
 .search-pill svg { width:12px; height:12px; flex-shrink:0; }
 .search-results-block { background:var(--bg2); border:1px solid var(--border); border-radius:12px; margin-top:8px; overflow:hidden; }
 .search-results-hdr { display:flex; align-items:center; gap:6px; padding:8px 12px; border-bottom:1px solid var(--border); font-family:var(--font-sans); font-size:11px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:0.07em; }
@@ -809,6 +810,35 @@ body.theme-shifting { animation:themeShift 0.4s ease; }
   color:#fbbf24; letter-spacing:0.04em;
 }
 .sheet-pro-badge svg { width:12px; height:12px; }
+
+/* ─── PRO VOICE GATE ─── */
+.pro-voice-lock {
+  position:relative;
+}
+.pro-voice-lock::after {
+  content:'★';
+  position:absolute; top:-4px; right:-4px;
+  width:14px; height:14px; border-radius:50%;
+  background:linear-gradient(135deg,#fbbf24,#f59e0b);
+  color:#000; font-size:8px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+  line-height:14px; text-align:center;
+  box-shadow:0 0 6px rgba(251,191,36,0.5);
+  pointer-events:none;
+}
+/* PRO required inline message */
+.pro-voice-required {
+  display:flex; align-items:flex-start; gap:10px;
+  padding:12px 16px; border-radius:14px;
+  background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(212,113,74,0.06));
+  border:1px solid rgba(255,215,0,0.25);
+  margin-top:4px;
+}
+.pro-voice-required svg { width:18px; height:18px; color:#fbbf24; flex-shrink:0; margin-top:1px; }
+.pro-voice-required-body { flex:1; }
+.pro-voice-required-title { font-family:var(--font-sans); font-size:14px; font-weight:600; color:#fbbf24; margin-bottom:4px; }
+.pro-voice-required-sub { font-family:var(--font-sans); font-size:13px; color:var(--text2); line-height:1.5; }
+.pro-voice-required-btn { display:inline-block; margin-top:10px; padding:8px 18px; border-radius:11px; border:none; background:var(--accent); color:white; font-family:var(--font-sans); font-size:13px; font-weight:600; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -936,7 +966,7 @@ body.theme-shifting { animation:themeShift 0.4s ease; }
       <span class="pill-name" id="pillName">Quar</span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
     </button>
-    <button class="ghost-icon" onclick="openArena()" title="Arena mode" style="color:var(--accent)">
+    <button class="ghost-icon pro-voice-lock" id="arenaBtn" onclick="openArena()" title="Arena mode (PRO)" style="color:var(--accent)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
     </button>
     <button class="ghost-icon" onclick="newChat()" title="New chat">
@@ -971,11 +1001,15 @@ body.theme-shifting { animation:themeShift 0.4s ease; }
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           </button>
           <input type="file" id="fileInput" accept="*/*" style="display:none" onchange="handleFileSelect(this)">
-          <button class="mic-btn" id="micBtn" onclick="toggleVoiceInput()" title="Voice input">
+          <button class="mic-btn pro-voice-lock" id="micBtn" onclick="toggleVoiceInput()" title="Voice input">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
           </button>
-          <button class="vmode-open-btn" onclick="openVoiceMode()" title="Voice mode">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><circle cx="12" cy="22" r="1" fill="currentColor" stroke="none"/><path d="M8 22h8"/><path d="M3 6l3 3M21 6l-3 3M3 18l3-3M21 18l-3-3" stroke-linecap="round"/></svg>
+          <button class="vmode-open-btn pro-voice-lock" onclick="openVoiceMode()" title="Voice mode (PRO)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="12" x2="2" y2="12"/><line x1="6" y1="8" x2="6" y2="16"/><line x1="10" y1="5" x2="10" y2="19"/><line x1="14" y1="8" x2="14" y2="16"/><line x1="18" y1="10" x2="18" y2="14"/><line x1="22" y1="12" x2="22" y2="12"/></svg>
+          </button>
+          <button class="search-pill" id="searchPill" onclick="toggleSearch()" title="Toggle web search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <span id="searchPillLabel">Search</span>
           </button>
         </div>
         <div class="inp-right">
@@ -1014,13 +1048,16 @@ body.theme-shifting { animation:themeShift 0.4s ease; }
       </div>
       <div class="settings-row">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-        <div class="settings-row-text"><div class="settings-row-label">Auto-speak replies</div><div class="settings-row-sub">Read responses aloud via voice</div></div>
+        <div class="settings-row-text">
+          <div class="settings-row-label" style="display:flex;align-items:center;gap:6px">Auto-speak replies <span id="autoSpeakProBadge" style="display:none;padding:1px 6px;border-radius:5px;font-size:9px;font-weight:700;letter-spacing:0.06em;background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.35)">PRO</span></div>
+          <div class="settings-row-sub">Read responses aloud via voice</div>
+        </div>
         <div class="toggle off" id="autoSpeakToggle" onclick="toggleAutoSpeak(this)"></div>
       </div>
       <div class="settings-row" onclick="openVoiceSheet()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
         <div class="settings-row-text">
-          <div class="settings-row-label">Voice</div>
+          <div class="settings-row-label" style="display:flex;align-items:center;gap:6px">Voice <span id="voiceChooseProBadge" style="display:none;padding:1px 6px;border-radius:5px;font-size:9px;font-weight:700;letter-spacing:0.06em;background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.35)">PRO</span></div>
           <div class="settings-row-sub" id="settingsVoiceName">Brian</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
@@ -1050,6 +1087,14 @@ body.theme-shifting { animation:themeShift 0.4s ease; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="2" width="10" height="20" rx="3"/><line x1="12" y1="18" x2="12" y2="18" stroke-width="3"/></svg>
         <div class="settings-row-text"><div class="settings-row-label">Haptic feedback</div></div>
         <div class="toggle" id="hapticToggle" onclick="toggleHaptic(this)"></div>
+      </div>
+      <div class="settings-row" id="searchToggleRow" onclick="toggleSearch()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <div class="settings-row-text">
+          <div class="settings-row-label">Web Search</div>
+          <div class="settings-row-sub" id="searchSettingsSub">Search the web to answer questions</div>
+        </div>
+        <div class="toggle off" id="searchToggleBtn"></div>
       </div>
       <div class="settings-row" onclick="showToast('All data stays in your browser.')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -1086,7 +1131,8 @@ body.theme-shifting { animation:themeShift 0.4s ease; }
         <button id="puterLoginBtn" onclick="puterToggleAuth()" style="padding:7px 18px;border-radius:12px;border:1.5px solid var(--accent);background:rgba(var(--accentRgb),0.1);color:var(--accent);font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">Sign in</button>
       </div>
       <div style="padding:6px 16px 10px;font-family:var(--font-sans);font-size:11px;color:var(--text3);line-height:1.5">
-        Sign in with Puter to unlock Helix PRO. Free account. Login opens a new tab — return here when done, it will detect automatically.
+        Sign in with Puter to unlock Helix PRO. Free account. Login opens a new tab — return here when done.<br>
+        <span style="color:var(--accent)">PRO features:</span> GPT-4o / Claude models · Image generation · Native web search · Unlimited TTS &amp; Voice (STS) · Arena mode
       </div>
     </div>
 
@@ -1261,6 +1307,7 @@ let autoSpeak           = false;
 const codeStore   = {};
 let codeStoreIdx  = 0;
 let currentPreviewId = null;
+let lastImagePrompt  = null; // tracks last generated image for follow-up edits
 
 // HuggingFace + Search settings
 const hfToken      = atob('aGZfakpaaGRVZ25BTEhCRkdkaHFaUkVGbXpqbEdWSERWcGZoZg==');
@@ -1393,8 +1440,10 @@ function initAfterWelcome() {
   loadRecentChats();
   renderMemoriesSettings();
   loadSettings();
-  // Check Puter PRO status on load
-  updatePuterStatus().catch(() => {});
+  // Check Puter PRO status on load, then update voice gate UI
+  updatePuterStatus().catch(() => {}).finally(() => _updateVoiceLockUI());
+  // Apply voice lock UI immediately (isPuterPro starts false)
+  _updateVoiceLockUI();
 }
 
 function updateUserUI() {
@@ -2046,6 +2095,15 @@ function isImageRequest(text) {
     || /^(draw|paint|imagine|generate|create)\s/i.test(text.trim());
 }
 
+// Detect follow-up edits like "give her an iPhone", "add a hat", "make it sunny"
+function isImageEditRequest(text) {
+  if (!lastImagePrompt) return false;
+  return /\b(give|add|put|make|change|now|also|include|with|but|replace|remove|dress)\b.{0,35}\b(her|him|it|them|the|this|that|his|its)\b/i.test(text)
+    || /^(now |also |but |and )(make|give|add|draw|show|generate|render|paint)/i.test(text.trim())
+    || /\b(her|him|it)\b.{0,30}\b(with|holding|wearing|using|having|a |an )\b/i.test(text)
+    || /^(same|similar|like (that|before|the last))/i.test(text.trim());
+}
+
 /* Image generation requires Helix PRO (Puter sign-in).
    All models are PRO-only — uses puter.ai.txt2img under the hood. */
 async function generateImage(prompt) {
@@ -2055,8 +2113,21 @@ async function generateImage(prompt) {
   if (!signedIn || !isPuterPro) {
     throw new Error('PRO_REQUIRED');
   }
-  // Generate via Puter.js — returns an <img> element
-  const imgEl = await puter.ai.txt2img(prompt, { model: 'gpt-image-1', quality: 'medium' });
+
+  // Race generation against abort signal
+  const sig = abortController?.signal;
+  const imgPromise = puter.ai.txt2img(prompt, { model: 'gpt-image-1', quality: 'medium' });
+
+  let imgEl;
+  if (sig) {
+    const abortP = new Promise((_, rej) => {
+      if (sig.aborted) rej(new DOMException('Aborted', 'AbortError'));
+      else sig.addEventListener('abort', () => rej(new DOMException('Aborted', 'AbortError')), { once: true });
+    });
+    imgEl = await Promise.race([imgPromise, abortP]);
+  } else {
+    imgEl = await imgPromise;
+  }
   return imgEl.src;
 }
 
@@ -2223,8 +2294,13 @@ async function callAPI(userMessage, attachment, onChunk, systemAddendum) {
 /* ─── Puter helper ─── */
 async function _callPuter(messages, stream, onChunk, sig) {
   const model = MODELS[currentModel]?.puterModel || 'claude-sonnet-4-6';
+  // Inject native web search tool for PRO users when search is toggled on
+  const opts = { model, stream };
+  if (searchEnabled) {
+    opts.tools = [{ type: 'web_search_20250305', name: 'web_search' }];
+  }
   if (stream) {
-    const resp = await puter.ai.chat(messages, { model, stream: true });
+    const resp = await puter.ai.chat(messages, opts);
     let full = '';
     for await (const part of resp) {
       if (sig.aborted) throw new DOMException('Aborted', 'AbortError');
@@ -2233,7 +2309,7 @@ async function _callPuter(messages, stream, onChunk, sig) {
     }
     return full;
   } else {
-    const resp = await puter.ai.chat(messages, { model });
+    const resp = await puter.ai.chat(messages, opts);
     return resp?.message?.content?.[0]?.text || resp?.message?.content || resp?.text || '(empty)';
   }
 }
@@ -2485,11 +2561,16 @@ async function sendMsg() {
   haptic();
 
   // ── Image generation ──────────────────────────
-  if (isImageRequest(txt) && !attachment) {
+  if ((isImageRequest(txt) || isImageEditRequest(txt)) && !attachment) {
     addTyping();
+    // Build prompt: combine with previous if this is an edit
+    const finalPrompt = isImageEditRequest(txt) && lastImagePrompt
+      ? lastImagePrompt + ', ' + txt
+      : txt;
     try {
-      const imgUrl = await generateImage(txt);
-      removeTyping(); addImageMsg(imgUrl, txt);
+      const imgUrl = await generateImage(finalPrompt);
+      lastImagePrompt = finalPrompt;
+      removeTyping(); addImageMsg(imgUrl, finalPrompt);
     } catch (err) {
       removeTyping();
       if (err.name !== 'AbortError') {
@@ -2505,9 +2586,11 @@ async function sendMsg() {
   addTyping();
   setArtifactGenerating(true);
 
-  // ── Web search (runs while typing indicator shows) ────
+  // ── Web search ────────────────────────────────
+  // PRO users: puter handles search natively via tools (no addendum needed)
+  // Free users: inject DDG results as context addendum
   let searchAddendum = '';
-  if (searchEnabled && txt && !attachment) {
+  if (searchEnabled && txt && !attachment && !isPuterPro) {
     try {
       const results = await doWebSearch(txt);
       if (results.length) {
@@ -2701,7 +2784,36 @@ function addMsg(role, text, silent, artifacts, searchHTML) {
   if (!silent) scrollBottom();
 }
 
+/* ── Image storage helpers (localStorage) ── */
+function _nextImgId() {
+  const id = ls('img_next_id', 1);
+  lsSet('img_next_id', id + 1);
+  return id;
+}
+function _saveImgData(id, dataUrl, prompt) {
+  try {
+    const gallery = ls('img_gallery', {});
+    gallery[id] = { dataUrl, prompt, ts: Date.now() };
+    lsSet('img_gallery', gallery);
+  } catch(e) {} // may fail if localStorage is full
+}
+function _getImgData(id) {
+  const gallery = ls('img_gallery', {});
+  return gallery[id] || null;
+}
+async function _srcToDataUrl(src) {
+  if (src.startsWith('data:')) return src;
+  try {
+    const r = await fetch(src);
+    const blob = await r.blob();
+    return await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(blob); });
+  } catch(e) { return src; }
+}
+
 function addImageMsg(imgUrl, prompt) {
+  const imgId = _nextImgId();
+  const shareUrl = `https://helixai-4-0.github.io/?img=${imgId}`;
+
   const c = document.getElementById('messages');
   const d = document.createElement('div');
   d.className = 'msg-anim';
@@ -2717,9 +2829,9 @@ function addImageMsg(imgUrl, prompt) {
       </div>
       <div class="msg-actions">
         <span class="msg-tag">${currentModel}</span>
-        <button class="copy-btn" onclick="copyImgUrl(this)" data-url="${escAttr(imgUrl)}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          Copy URL
+        <button class="copy-btn" id="imgShareBtn_${imgId}" onclick="copyImgShareUrl(this)" data-share-url="${escAttr(shareUrl)}" data-img-id="${imgId}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          Share
         </button>
         <button class="copy-btn" onclick="downloadImgUrl(this)" data-url="${escAttr(imgUrl)}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -2729,6 +2841,11 @@ function addImageMsg(imgUrl, prompt) {
     </div>
   </div>`;
   c.appendChild(d); scrollBottom();
+
+  // Store image data asynchronously for sharing
+  _srcToDataUrl(imgUrl).then(dataUrl => {
+    _saveImgData(imgId, dataUrl, prompt);
+  });
 }
 
 function addTyping() {
@@ -2826,15 +2943,40 @@ function resendUserMsg(btn) {
 function editUserMsg(btn) {
   const text = btn.getAttribute('data-text');
   if (!text) return;
+
+  // Find the msg-anim container of this user message
+  const msgAnim = btn.closest('.msg-anim');
+  const messagesEl = document.getElementById('messages');
+  const allMsgs = Array.from(messagesEl.children);
+  const wrapIdx = allMsgs.indexOf(msgAnim);
+
+  if (wrapIdx >= 0) {
+    // Count user messages that came BEFORE this one → that's our history trim index
+    let userMsgsBefore = 0;
+    for (let i = 0; i < wrapIdx; i++) {
+      if (allMsgs[i].querySelector('.msg-user-wrap')) userMsgsBefore++;
+    }
+    // Remove this message and everything after it from the DOM
+    for (let i = allMsgs.length - 1; i >= wrapIdx; i--) {
+      allMsgs[i].remove();
+    }
+    // Trim history: each user+AI pair = 2 entries
+    conversationHistory = conversationHistory.slice(0, userMsgsBefore * 2);
+    lastImagePrompt = null;
+    // Show empty state if nothing left
+    if (!messagesEl.children.length) {
+      messagesEl.style.display = 'none';
+      document.getElementById('emptyState').style.display = 'flex';
+      document.getElementById('chatBody').classList.remove('has-messages');
+    }
+  }
+
   const inp = document.getElementById('msgInput');
   inp.value = text;
   handleInput(inp);
   inp.focus();
-  // Close the actions
-  const wrap = btn.closest('.msg-user-wrap');
-  wrap?.querySelector('.user-actions')?.classList.remove('show');
   _activeUserActions = null;
-  showToast('Edit your message and send');
+  showToast('Message removed — edit and resend');
 }
 
 
@@ -2917,10 +3059,32 @@ function downloadArtifact() {
 function toggleSearch() {
   searchEnabled = !searchEnabled;
   lsSet('searchEnabled', searchEnabled);
-  document.getElementById('searchPill').classList.toggle('on', searchEnabled);
-  const toggleEl = document.getElementById('searchToggleRow');
-  if (toggleEl) toggleEl.classList.toggle('off', !searchEnabled);
-  showToast(searchEnabled ? 'Web search: DuckDuckGo enabled' : 'Web search disabled');
+  _updateSearchUI();
+  const label = searchEnabled
+    ? (isPuterPro ? 'PRO Search enabled' : 'Web search: DuckDuckGo enabled')
+    : 'Web search disabled';
+  showToast(label);
+}
+
+function _updateSearchUI() {
+  const pill      = document.getElementById('searchPill');
+  const toggleBtn = document.getElementById('searchToggleBtn');
+  const toggleRow = document.getElementById('searchToggleRow');
+  const labelEl   = document.getElementById('searchPillLabel');
+  const subEl     = document.getElementById('searchSettingsSub');
+
+  if (pill) pill.classList.toggle('on', searchEnabled);
+  if (pill) pill.classList.toggle('pro-search', isPuterPro && searchEnabled);
+  if (toggleBtn) toggleBtn.classList.toggle('off', !searchEnabled);
+  if (toggleRow) toggleRow.classList.toggle('off', !searchEnabled);
+
+  // Pill label
+  if (labelEl) labelEl.textContent = (isPuterPro && searchEnabled) ? 'PRO Search' : 'Search';
+
+  // Settings description
+  if (subEl) subEl.textContent = isPuterPro
+    ? 'Helix PRO · Native real-time web search'
+    : 'DuckDuckGo · Basic web search';
 }
 
 /* ══════════════════════════════════════════
@@ -2948,6 +3112,9 @@ function loadSettings() {
   if (asEl) asEl.classList.toggle('off', !autoSpeak);
   // Restore selected voice label
   _updateVoiceLabels();
+  // Restore search state
+  searchEnabled = ls('searchEnabled', false);
+  _updateSearchUI();
   // Apply UI language
   _applyUiLang();
 }
@@ -2978,6 +3145,8 @@ async function updatePuterStatus() {
   // Refresh pill name and model sheet
   document.getElementById('pillName').textContent = isPuterPro ? currentModel + ' PRO v' + MODELS[currentModel].proVersion : currentModel + ' v' + MODELS[currentModel].version;
   renderModelSheet();
+  _updateSearchUI();
+  _updateVoiceLockUI();
 }
 
 async function puterToggleAuth() {
@@ -2990,6 +3159,7 @@ async function puterToggleAuth() {
       await puter.auth.signOut();
       showToast('Puter: signed out');
       updatePuterStatus();
+      _updateVoiceLockUI();
       if (btnEl) btnEl.disabled = false;
       return;
     }
@@ -3007,12 +3177,12 @@ async function puterToggleAuth() {
     async function onVisible() {
       if (document.visibilityState !== 'visible') return;
       const ok = await puter.auth.isSignedIn().catch(() => false);
-      if (ok) { cleanup(); showToast('Puter: signed in ✓ Helix PRO is now active!'); }
+      if (ok) { cleanup(); showToast('Puter: signed in ✓ Helix PRO is now active!'); _updateVoiceLockUI(); }
     }
     document.addEventListener('visibilitychange', onVisible);
     _pollInterval = setInterval(async () => {
       const ok = await puter.auth.isSignedIn().catch(() => false);
-      if (ok) { cleanup(); showToast('Puter: signed in ✓ Helix PRO is now active!'); }
+      if (ok) { cleanup(); showToast('Puter: signed in ✓ Helix PRO is now active!'); _updateVoiceLockUI(); }
     }, 2000);
     setTimeout(() => { cleanup(); }, 120000);
   } catch(e) {
@@ -3278,6 +3448,12 @@ function _playAudioUrl(url, btn, onEnd) {
 }
 
 async function speakText(text, btn) {
+  // ── PRO gate ──────────────────────────────────────
+  if (!isPuterPro) {
+    showToast('🔒 TTS requires Helix PRO');
+    return;
+  }
+
   if (currentAudio) {
     currentAudio.pause();
     if (currentAudio.src?.startsWith('blob:')) URL.revokeObjectURL(currentAudio.src);
@@ -3322,11 +3498,113 @@ function speakMessage(btn) {
 }
 
 function toggleAutoSpeak(el) {
+  if (!isPuterPro) {
+    showToast('🔒 Auto-speak requires Helix PRO');
+    el.classList.add('off');
+    autoSpeak = false;
+    _addProVoiceRequiredMsg();
+    return;
+  }
   autoSpeak = !autoSpeak;
   lsSet('autoSpeak', autoSpeak);
   el.classList.toggle('off', !autoSpeak);
   showToast(autoSpeak ? 'Auto-speak on' : 'Auto-speak off');
   haptic();
+}
+
+/* ══════════════════════════════════════════
+   PRO VOICE GATE HELPERS
+══════════════════════════════════════════ */
+function _updateVoiceLockUI() {
+  // Toggle gold star badge on mic/voice/arena buttons
+  document.querySelectorAll('.mic-btn, .vmode-open-btn, #arenaBtn').forEach(el => {
+    if (isPuterPro) el.classList.remove('pro-voice-lock');
+    else el.classList.add('pro-voice-lock');
+  });
+  // Show/hide PRO badge in settings
+  const autoSpeakBadge = document.getElementById('autoSpeakProBadge');
+  const voiceBadge = document.getElementById('voiceChooseProBadge');
+  if (autoSpeakBadge) autoSpeakBadge.style.display = isPuterPro ? 'none' : 'inline';
+  if (voiceBadge) voiceBadge.style.display = isPuterPro ? 'none' : 'inline';
+}
+
+function _addProRequiredMsg(featureName, description) {
+  const c = document.getElementById('messages');
+  const d = document.createElement('div');
+  d.className = 'msg-anim';
+  const logo = miniLogoSVG(MODELS[currentModel].theme.logo);
+  d.innerHTML = `<div class="msg-ai">
+    <div class="ai-dot">${logo}</div>
+    <div class="ai-content">
+      <div class="ai-text" style="font-family:var(--font-sans);font-size:15px">
+        <div class="pro-voice-required">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <div class="pro-voice-required-body">
+            <div class="pro-voice-required-title">Helix PRO required — ${escHtml(featureName)}</div>
+            <div class="pro-voice-required-sub">${description}</div>
+            <button class="pro-voice-required-btn" onclick="closeSidebar();goSettings();">Go to Settings → Sign in</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('messages').style.display   = 'flex';
+  document.getElementById('chatBody').classList.add('has-messages');
+  c.appendChild(d); scrollBottom();
+}
+
+function _addProVoiceRequiredMsg() {
+  _addProRequiredMsg(
+    'Voice & TTS',
+    'Voice input (STS) and text-to-speech (TTS) are <strong>Helix PRO</strong> features — unlimited access with a free Puter account. Powered by <code>puter.ai.speech2txt()</code> and <code>puter.ai.speech2speech()</code>.'
+  );
+}
+
+/* ══════════════════════════════════════════
+   PUTER STT — MediaRecorder → puter.ai.speech2txt()
+══════════════════════════════════════════ */
+let _puterMicStream    = null;
+let _puterMicRecorder  = null;
+let _puterMicChunks    = [];
+let _puterMicActive    = false;
+
+async function _puterSTTStart(onTranscript, onError) {
+  if (_puterMicActive) return;
+  try {
+    _puterMicStream   = await navigator.mediaDevices.getUserMedia({ audio: true });
+    _puterMicChunks   = [];
+    _puterMicRecorder = new MediaRecorder(_puterMicStream);
+    _puterMicRecorder.ondataavailable = e => { if (e.data.size > 0) _puterMicChunks.push(e.data); };
+    _puterMicRecorder.onstop = async () => {
+      _puterMicStream?.getTracks().forEach(t => t.stop());
+      _puterMicStream = null;
+      _puterMicActive = false;
+      if (!_puterMicChunks.length) return;
+      try {
+        const blob = new Blob(_puterMicChunks, { type: 'audio/webm' });
+        _puterMicChunks = [];
+        showToast('Transcribing…');
+        const result = await puter.ai.speech2txt(blob);
+        const text = (result?.text ?? String(result)).trim();
+        onTranscript(text);
+      } catch(e) {
+        onError?.(e.message || 'Transcription failed');
+      }
+    };
+    _puterMicRecorder.start();
+    _puterMicActive = true;
+  } catch(e) {
+    _puterMicActive = false;
+    if (e.name === 'NotAllowedError') onError?.('Mic blocked — please allow microphone access');
+    else onError?.(e.message || 'Could not start mic');
+  }
+}
+
+function _puterSTTStop() {
+  if (_puterMicRecorder && _puterMicActive) {
+    try { _puterMicRecorder.stop(); } catch(e) {}
+  }
 }
 
 /* ══════════════════════════════════════════
@@ -3337,49 +3615,47 @@ let isListening   = false;
 let _srFinalSeen  = false;
 
 function toggleVoiceInput() {
-  if (isListening) { _stopListening(); return; }
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { showToast('🎤 Voice not supported in this browser'); return; }
+  // ── PRO gate ──────────────────────────────────────
+  if (!isPuterPro) {
+    showToast('🔒 Voice input requires Helix PRO');
+    _addProVoiceRequiredMsg();
+    return;
+  }
 
-  _srFinalSeen = false;
-  recognition  = new SR();
-  recognition.continuous     = false;
-  recognition.interimResults = true;
-  recognition.lang           = sttLang || navigator.language || 'it-IT';
+  // ── PRO path: puter.ai.speech2txt() via MediaRecorder ──
+  if (_puterMicActive) {
+    // Stop recording → triggers onstop → transcription
+    _puterSTTStop();
+    document.getElementById('micBtn')?.classList.remove('listening');
+    isListening = false;
+    return;
+  }
 
-  recognition.onstart = () => {
-    isListening = true;
-    document.getElementById('micBtn')?.classList.add('listening');
-    showToast('Listening…');
-  };
+  isListening = true;
+  document.getElementById('micBtn')?.classList.add('listening');
+  showToast('🎤 Listening… tap again to stop');
 
-  recognition.onresult = (e) => {
-    let interim = '', finalTxt = '';
-    for (let r of e.results) {
-      if (r.isFinal) { finalTxt += r[0].transcript; _srFinalSeen = true; }
-      else interim += r[0].transcript;
+  _puterSTTStart(
+    (text) => {
+      // onTranscript
+      const inp = document.getElementById('msgInput');
+      inp.value = text;
+      handleInput(inp);
+      document.getElementById('micBtn')?.classList.remove('listening');
+      isListening = false;
+      showToast('Transcribed ✓');
+    },
+    (err) => {
+      // onError
+      showToast('Mic error: ' + err);
+      document.getElementById('micBtn')?.classList.remove('listening');
+      isListening = false;
     }
-    const inp = document.getElementById('msgInput');
-    inp.value = (finalTxt || interim).trim();
-    handleInput(inp);
-  };
-
-  recognition.onerror = (ev) => {
-    _stopListening();
-    if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
-      showToast('🎤 Mic blocked — open via HTTPS or allow mic access');
-    } else if (ev.error !== 'no-speech') {
-      showToast('Mic error: ' + ev.error);
-    }
-  };
-
-  recognition.onend = () => _stopListening();
-
-  try { recognition.start(); }
-  catch(e) { showToast('Could not start mic: ' + e.message); recognition = null; }
+  );
 }
 
 function _stopListening() {
+  if (_puterMicActive) { _puterSTTStop(); }
   if (recognition) { try { recognition.stop(); } catch(e) {} recognition = null; }
   isListening = false;
   document.getElementById('micBtn')?.classList.remove('listening');
@@ -3389,6 +3665,12 @@ function _stopListening() {
    VOICE MODE (fullscreen overlay — conversational)
 ══════════════════════════════════════════ */
 function openVoiceMode() {
+  // ── PRO gate ──────────────────────────────────────
+  if (!isPuterPro) {
+    showToast('🔒 Voice mode requires Helix PRO');
+    _addProVoiceRequiredMsg();
+    return;
+  }
   vmTranscript = ''; vmBusy = false;
   _vmReset();
   document.getElementById('vmodeOverlay').classList.add('open');
@@ -3428,65 +3710,60 @@ function _vmStopSpeaking() {
 
 function toggleVmodeMic() {
   if (vmBusy) return; // don't interrupt AI
-  if (vmListening) { _vmStopRec(); return; }
 
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    _vmSetStatus('🎤 Voice not supported', false);
-    showToast('Voice not supported in this browser');
+  // ── PRO path: use puter.ai.speech2txt() ──────────
+  if (_puterMicActive) {
+    // Already recording — stop → transcribe
+    _puterSTTStop();
     return;
   }
 
-  vmRec = new SR();
-  vmRec.continuous     = false;
-  vmRec.interimResults = true;
-  vmRec.lang           = sttLang || 'it-IT';
+  if (vmListening) { _vmStopRec(); return; }
 
-  vmRec.onstart = () => {
-    vmListening = true;
-    document.getElementById('vmodeOrbWrap').classList.add('listening');
-    document.getElementById('vmodeBars').classList.add('listening');
-    document.getElementById('vmodeMicMain').classList.add('listening');
-    _vmSetStatus(t('listening'), true);
-    haptic && haptic();
-  };
+  vmListening = true;
+  document.getElementById('vmodeOrbWrap').classList.add('listening');
+  document.getElementById('vmodeBars').classList.add('listening');
+  document.getElementById('vmodeMicMain').classList.add('listening');
+  _vmSetStatus(t('listening'), true);
+  haptic && haptic();
 
-  vmRec.onresult = (e) => {
-    let interim = '', finalTxt = '';
-    for (let r of e.results) {
-      if (r.isFinal) finalTxt += r[0].transcript;
-      else interim += r[0].transcript;
+  _puterSTTStart(
+    (text) => {
+      // onTranscript — successful transcription via puter.ai.speech2txt()
+      if (text) {
+        vmTranscript = (vmTranscript + ' ' + text).trim();
+        _vmSetTranscript(vmTranscript);
+        const confirmBtn = document.getElementById('vmodeConfirmBtn');
+        if (vmTranscript) {
+          confirmBtn.classList.add('has-text');
+          const sb = document.getElementById('vmodeSendChat');
+          if (sb) sb.style.display = 'flex';
+        }
+      }
+      vmListening = false;
+      document.getElementById('vmodeOrbWrap').classList.remove('listening');
+      document.getElementById('vmodeBars').classList.remove('listening');
+      document.getElementById('vmodeMicMain').classList.remove('listening');
+      if (!vmBusy) {
+        const status = vmTranscript ? t('tapContinue') : t('tapToSpeak');
+        _vmSetStatus(status, false);
+      }
+    },
+    (err) => {
+      // onError
+      vmListening = false;
+      document.getElementById('vmodeOrbWrap').classList.remove('listening');
+      document.getElementById('vmodeBars').classList.remove('listening');
+      document.getElementById('vmodeMicMain').classList.remove('listening');
+      if (err.includes('blocked') || err.includes('NotAllowed')) {
+        _vmSetStatus('🎤 Mic blocked — needs HTTPS', false);
+        showToast('Mic blocked: open via HTTPS or allow mic access');
+      } else {
+        _vmSetStatus(t('tapToSpeak'), false);
+        showToast('Mic error: ' + err);
+      }
     }
-    const shown = (finalTxt || interim).trim();
-    if (finalTxt) vmTranscript = (vmTranscript + ' ' + finalTxt).trim();
-    _vmSetTranscript(vmTranscript || shown);
-    const confirmBtn = document.getElementById('vmodeConfirmBtn');
-    if (vmTranscript) {
-      confirmBtn.classList.add('has-text');
-      const sb = document.getElementById('vmodeSendChat');
-      if (sb) sb.style.display = 'flex';
-    }
-  };
-
-  vmRec.onerror = (ev) => {
-    _vmStopRec();
-    if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
-      _vmSetStatus('🎤 Mic blocked — needs HTTPS', false);
-      showToast('Mic blocked: open via HTTPS or allow mic access');
-    } else if (ev.error !== 'no-speech') {
-      _vmSetStatus(t('tapToSpeak'), false);
-      showToast('Mic error: ' + ev.error);
-    }
-  };
-
-  vmRec.onend = () => _vmStopRec();
-
-  try { vmRec.start(); }
-  catch(e) {
-    _vmSetStatus('🎤 Could not start mic', false);
-    showToast('Could not start mic: ' + e.message);
-    vmRec = null;
-  }
+  );
 }
 
 function _vmStopRec() {
@@ -3750,12 +4027,19 @@ function copyMsg(btn) {
     setTimeout(() => btn.innerHTML = orig, 1500);
   }).catch(() => showToast('Copy failed'));
 }
-function copyImgUrl(btn) {
-  const url = btn.getAttribute('data-url');
-  navigator.clipboard.writeText(url).then(() => {
+function copyImgShareUrl(btn) {
+  const shareUrl = btn.getAttribute('data-share-url');
+  const imgId    = btn.getAttribute('data-img-id');
+  // Check if data is ready
+  const data = _getImgData(imgId);
+  if (!data) {
+    showToast('Image still saving… try again in a moment');
+    return;
+  }
+  navigator.clipboard.writeText(shareUrl).then(() => {
     const orig = btn.innerHTML;
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied`;
-    setTimeout(() => btn.innerHTML = orig, 1500);
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+    setTimeout(() => btn.innerHTML = orig, 1800);
   }).catch(() => showToast('Copy failed'));
 }
 function downloadImgUrl(btn) {
@@ -3932,6 +4216,11 @@ if (typeof marked !== 'undefined') {
 let arenaRunning = false;
 
 function openArena() {
+  if (!isPuterPro) {
+    showToast('🔒 Arena mode requires Helix PRO');
+    _addProRequiredMsg('Arena mode', 'Compare all models side-by-side simultaneously with <strong>Helix PRO</strong>. Sign in with your free Puter account to unlock it.');
+    return;
+  }
   document.getElementById('arenaOverlay').classList.add('open');
   setTimeout(() => document.getElementById('arenaInput').focus(), 350);
   haptic && haptic();
@@ -4094,6 +4383,37 @@ async function _callPollinations_arena(messages, onChunk) {
   }
   return stripPollinationsAd(full);
 }
+
+/* ══════════════════════════════════════════
+   IMAGE VIEWER (for ?img= share URLs)
+══════════════════════════════════════════ */
+(function checkImgParam() {
+  const params = new URLSearchParams(window.location.search);
+  const imgId  = params.get('img');
+  if (!imgId) return;
+
+  // Build a fullscreen viewer overlay immediately
+  const overlay = document.createElement('div');
+  overlay.id = 'imgViewerOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px;';
+
+  const data = _getImgData(parseInt(imgId));
+  if (data) {
+    overlay.innerHTML = `
+      <div style="font-family:-apple-system,sans-serif;color:#888;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px">Helix AI · Generated Image</div>
+      <img src="${data.dataUrl}" style="max-width:100%;max-height:70vh;border-radius:14px;object-fit:contain;" alt="${escAttr(data.prompt||'')}">
+      <div style="font-family:-apple-system,sans-serif;color:#555;font-size:13px;text-align:center;max-width:340px;line-height:1.5">${escHtml(data.prompt||'')}</div>
+      <div style="display:flex;gap:12px;margin-top:8px">
+        <a href="${data.dataUrl}" download="helix-image.png" style="padding:10px 22px;border-radius:12px;background:#d4714a;color:white;font-family:-apple-system,sans-serif;font-size:14px;font-weight:600;text-decoration:none">Download</a>
+        <button onclick="window.location.href='https://helixai-4-0.github.io/'" style="padding:10px 22px;border-radius:12px;border:1.5px solid #333;background:transparent;color:#aaa;font-family:-apple-system,sans-serif;font-size:14px;cursor:pointer;">Open Helix</button>
+      </div>`;
+  } else {
+    overlay.innerHTML = `
+      <div style="font-family:-apple-system,sans-serif;color:#888;font-size:14px;text-align:center">Image not found.<br><br>This link only works on the device that generated the image.</div>
+      <button onclick="window.location.href='https://helixai-4-0.github.io/'" style="margin-top:16px;padding:10px 22px;border-radius:12px;border:1.5px solid #333;background:transparent;color:#aaa;font-family:-apple-system,sans-serif;font-size:14px;cursor:pointer;">Open Helix</button>`;
+  }
+  document.body.appendChild(overlay);
+})();
 </script>
 </body>
 </html>
