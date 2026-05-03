@@ -1,7 +1,7 @@
 Welcome to
 Helix AI
 
-<p align="center">
+<p align="left">
   <img src="image0.jpg" alt="Helix AI Logo" width="140">
 </p>Helix AI is a modern web-based AI chat interface designed to provide a clean, fast, and intuitive user experience. Built entirely with HTML, CSS, and vanilla JavaScript, it offers a lightweight alternative to framework-heavy applications while maintaining a refined and responsive design.
 
