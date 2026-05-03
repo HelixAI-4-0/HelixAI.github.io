@@ -1,33 +1,29 @@
-Welcome to:
-# Helix AI
+𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐭𝐨:
+# 𝗛𝗲𝗹𝗶𝘅 𝗔𝗜
 
-<p align="left">
+<p align="center">
   <img src="image0.jpg" alt="Helix AI Logo" width="180">
-  
-Helix AI is a modern web-based AI chat interface designed to provide a clean, fast, and intuitive user experience. Built entirely with HTML, CSS, and vanilla JavaScript, it offers a lightweight alternative to framework-heavy applications while maintaining a refined and responsive design.
+</p>𝗛𝗲𝗹𝗶𝘅 𝗔𝗜 𝗶𝘀 𝗮 𝗺𝗼𝗱𝗲𝗿𝗻 𝘄𝗲𝗯-𝗯𝗮𝘀𝗲𝗱 𝗔𝗜 𝗰𝗵𝗮𝘁 𝗶𝗻𝘁𝗲𝗿𝗳𝗮𝗰𝗲 𝗱𝗲𝘀𝗶𝗴𝗻𝗲𝗱 𝘁𝗼 𝗽𝗿𝗼𝘃𝗶𝗱𝗲 𝗮 𝗰𝗹𝗲𝗮𝗻, 𝗳𝗮𝘀𝘁, 𝗮𝗻𝗱 𝗶𝗻𝘁𝘂𝗶𝘁𝗶𝘃𝗲 𝘂𝘀𝗲𝗿 𝗲𝘅𝗽𝗲𝗿𝗶𝗲𝗻𝗰𝗲. 𝗕𝘂𝗶𝗹𝘁 𝗲𝗻𝘁𝗶𝗿𝗲𝗹𝘆 𝘄𝗶𝘁𝗵 𝗛𝗧𝗠𝗟, 𝗖𝗦𝗦, 𝗮𝗻𝗱 𝘃𝗮𝗻𝗶𝗹𝗹𝗮 𝗝𝗮𝘃𝗮𝗦𝗰𝗿𝗶𝗽𝘁, 𝗶𝘁 𝗼𝗳𝗳𝗲𝗿𝘀 𝗮 𝗹𝗶𝗴𝗵𝘁𝘄𝗲𝗶𝗴𝗵𝘁 𝗮𝗹𝘁𝗲𝗿𝗻𝗮𝘁𝗶𝘃𝗲 𝘁𝗼 𝗳𝗿𝗮𝗺𝗲𝘄𝗼𝗿𝗸-𝗵𝗲𝗮𝘃𝘆 𝗮𝗽𝗽𝗹𝗶𝗰𝗮𝘁𝗶𝗼𝗻𝘀 𝘄𝗵𝗶𝗹𝗲 𝗺𝗮𝗶𝗻𝘁𝗮𝗶𝗻𝗶𝗻𝗴 𝗮 𝗿𝗲𝗳𝗶𝗻𝗲𝗱 𝗮𝗻𝗱 𝗿𝗲𝘀𝗽𝗼𝗻𝘀𝗶𝘃𝗲 𝗱𝗲𝘀𝗶𝗴𝗻.
 
-The application includes a real-time chat system with support for rich text formatting, file attachments, and voice input. It also features an integrated artifact panel that allows users to preview and manage generated content such as code or documents directly within the interface.
+𝐊𝐞𝐲 𝐅𝐞𝐚𝐭𝐮𝐫𝐞𝐬
 
-Helix AI focuses on simplicity, performance, and usability. The interface is structured with a sidebar for navigation, a customizable settings panel, and support for both light and dark themes. All data is handled locally in the browser, ensuring a privacy-oriented experience without requiring user accounts.
+𝗥𝗲𝗮𝗹-𝘁𝗶𝗺𝗲 𝗔𝗜 𝗰𝗵𝗮𝘁 𝗶𝗻𝘁𝗲𝗿𝗳𝗮𝗰𝗲
+𝗠𝗮𝗿𝗸𝗱𝗼𝘄𝗻 𝗿𝗲𝗻𝗱𝗲𝗿𝗶𝗻𝗴 𝗮𝗻𝗱 𝗰𝗼𝗱𝗲 𝗳𝗼𝗿𝗺𝗮𝘁𝘁𝗶𝗻𝗴
+𝗙𝗶𝗹𝗲 𝗮𝘁𝘁𝗮𝗰𝗵𝗺𝗲𝗻𝘁 𝗮𝗻𝗱 𝗽𝗿𝗲𝘃𝗶𝗲𝘄 𝘀𝘆𝘀𝘁𝗲𝗺
+𝗩𝗼𝗶𝗰𝗲 𝗶𝗻𝗽𝘂𝘁 𝗮𝗻𝗱 𝗼𝗽𝘁𝗶𝗼𝗻𝗮𝗹 𝘀𝗽𝗲𝗲𝗰𝗵 𝗼𝘂𝘁𝗽𝘂𝘁
+𝗔𝗿𝘁𝗶𝗳𝗮𝗰𝘁 𝘃𝗶𝗲𝘄𝗲𝗿 𝘄𝗶𝘁𝗵 𝗽𝗿𝗲𝘃𝗶𝗲𝘄 𝗮𝗻𝗱 𝗰𝗼𝗱𝗲 𝗺𝗼𝗱𝗲𝘀
+𝗦𝗶𝗱𝗲𝗯𝗮𝗿 𝘄𝗶𝘁𝗵 𝗰𝗵𝗮𝘁 𝗵𝗶𝘀𝘁𝗼𝗿𝘆 𝗮𝗻𝗱 𝗻𝗮𝘃𝗶𝗴𝗮𝘁𝗶𝗼𝗻
+𝗟𝗶𝗴𝗵𝘁 𝗮𝗻𝗱 𝗱𝗮𝗿𝗸 𝗺𝗼𝗱𝗲 𝘀𝘂𝗽𝗽𝗼𝗿𝘁
+𝗙𝘂𝗹𝗹𝘆 𝗰𝗹𝗶𝗲𝗻𝘁-𝘀𝗶𝗱𝗲 (𝗻𝗼 𝗲𝘅𝘁𝗲𝗿𝗻𝗮𝗹 𝘀𝘁𝗼𝗿𝗮𝗴𝗲 𝗿𝗲𝗾𝘂𝗶𝗿𝗲𝗱)
 
-Key Features
+𝐓𝐞𝐜𝐡 𝐒𝐭𝐚𝐜𝐤
 
-- Real-time AI chat interface
-- Markdown rendering and code formatting
-- File attachment and preview system
-- Voice input and optional speech output
-- Artifact viewer with preview and code modes
-- Sidebar with chat history and navigation
-- Light and dark mode support
-- Fully client-side (no external storage required)
+𝗛𝗧𝗠𝗟𝟱
+𝗖𝗦𝗦𝟯
+𝗩𝗮𝗻𝗶𝗹𝗹𝗮 𝗝𝗮𝘃𝗮𝗦𝗰𝗿𝗶𝗽𝘁
+𝗠𝗮𝗿𝗸𝗲𝗱.𝗷𝘀
 
-Tech Stack
+𝐎𝐯𝐞𝐫𝐯𝐢𝐞𝐰
 
-- HTML5
-- CSS3 (custom properties, animations, responsive layout)
-- Vanilla JavaScript
-- Marked.js for Markdown parsing
+𝗛𝗲𝗹𝗶𝘅 𝗔𝗜 𝗶𝘀 𝗱𝗲𝘀𝗶𝗴𝗻𝗲𝗱 𝘁𝗼 𝗯𝗮𝗹𝗮𝗻𝗰𝗲 𝗽𝗲𝗿𝗳𝗼𝗿𝗺𝗮𝗻𝗰𝗲 𝗮𝗻𝗱 𝗮𝗲𝘀𝘁𝗵𝗲𝘁𝗶𝗰𝘀, 𝗱𝗲𝗹𝗶𝘃𝗲𝗿𝗶𝗻𝗴 𝗮 𝘀𝗺𝗼𝗼𝘁𝗵 𝗶𝗻𝘁𝗲𝗿𝗮𝗰𝘁𝗶𝗼𝗻 𝗳𝗹𝗼𝘄 𝗮𝗻𝗱 𝗮 𝗺𝗼𝗱𝗲𝗿𝗻 𝗶𝗻𝘁𝗲𝗿𝗳𝗮𝗰𝗲 𝘄𝗶𝘁𝗵𝗼𝘂𝘁 𝗿𝗲𝗹𝘆𝗶𝗻𝗴 𝗼𝗻 𝗵𝗲𝗮𝘃𝘆 𝗹𝗶𝗯𝗿𝗮𝗿𝗶𝗲𝘀 𝗼𝗿 𝗳𝗿𝗮𝗺𝗲𝘄𝗼𝗿𝗸𝘀.
 
-Overview
-
-Helix AI is designed to balance performance and aesthetics, delivering a smooth interaction flow and a modern interface without relying on heavy libraries or frameworks. It can be used as a standalone project or as a foundation for more advanced AI-driven applications.
