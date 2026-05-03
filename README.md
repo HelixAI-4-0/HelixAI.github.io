@@ -1,5 +1,5 @@
 Welcome to
-Helix AI
+#Helix AI
 
 <p align="left">
   <img src="image0.jpg" alt="Helix AI Logo" width="180">
