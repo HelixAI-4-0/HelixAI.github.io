@@ -23,7 +23,7 @@
 | 🎙️ **Voice Mode** | Full voice conversation with animated orb UI |
 | 🔊 **Kokoro TTS Studio** | High-quality offline text-to-speech with 20+ voices |
 | 📎 **File Attachments** | Images, PDFs, code files — attach and analyze |
-| ⚡ **Artifacts** | Auto-generates HTML apps, code, diagrams, Markdown docs |
+| ⚡ **Projects** | Auto-generates HTML apps, code, diagrams, Markdown docs |
 | 🔍 **Web Search** | Integrated DuckDuckGo search for real-time answers |
 | 🌓 **Themes** | Per-model color themes + light/dark/system mode |
 | 🌍 **9 Languages** | Italian, English, Spanish, French, German, Portuguese, Chinese, Japanese, Korean |
