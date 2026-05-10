@@ -93,10 +93,10 @@ function safeParse(md) {
 }
 </script>
 <script type="module">
-  import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3/dist/transformers.min.js';
-  window._hfPipeline = pipeline;
-  window._hfTransformersReady = true;
-  window.dispatchEvent(new Event('hf-transformers-ready'));
+  import { KokoroTTS } from 'https://esm.sh/kokoro-js';
+  window._KokoroTTS = KokoroTTS;
+  window._kokoroJsReady = true;
+  window.dispatchEvent(new Event('kokoro-js-ready'));
 </script>
 <script type="module">
   import * as webllm from "https://esm.run/@mlc-ai/web-llm";
@@ -837,7 +837,7 @@ button { touch-action: manipulation; }
 }
 .vmode-open-btn:active { background:rgba(128,128,128,0.15); }
 .vmode-open-btn svg { width:20px; height:20px; }
-.chat-del-btn { width:28px; height:28px; border-radius:50%; border:none; background:none; color:var(--text3); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; opacity:0; transition:opacity 0.15s,color 0.15s; }
+.chat-del-btn { width:28px; height:28px; border-radius:50%; border:none; background:none; color:var(--text3); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; opacity:0.5; transition:opacity 0.15s,color 0.15s; }
 .recent-item:hover .chat-del-btn { opacity:1; }
 .chat-del-btn:active { color:var(--red); opacity:1; }
 .chat-del-btn svg { width:14px; height:14px; }
@@ -1137,10 +1137,10 @@ button { touch-action: manipulation; }
       </button>
     </div>
     <div style="display:flex;align-items:center;gap:2px;flex-shrink:0">
-      <button class="ghost-icon" id="arenaBtn" onclick="openArena()" title="Arena — confronta modelli" style="color:var(--accent)">
+      <button class="ghost-icon" id="arenaBtn" onclick="openArena()" title="Arena — compare models" style="color:var(--accent)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
       </button>
-      <button class="ghost-icon" id="incognitoBtn" onclick="toggleIncognito()" title="Modalità incognito">
+      <button class="ghost-icon" id="incognitoBtn" onclick="toggleIncognito()" title="Incognito mode">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
       </button>
     </div>
@@ -1148,8 +1148,8 @@ button { touch-action: manipulation; }
   <!-- Incognito banner -->
   <div id="incognitoBanner" style="display:none;background:rgba(139,92,246,0.12);border-bottom:1px solid rgba(139,92,246,0.25);padding:6px 16px;align-items:center;gap:8px;flex-shrink:0">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-    <span style="font-family:var(--font-sans);font-size:12px;color:#a78bfa;font-weight:600">Modalità Incognito — nessun dato salvato, si cancella al refresh</span>
-    <button onclick="toggleIncognito()" style="margin-left:auto;background:none;border:none;color:#a78bfa;font-size:11px;font-family:var(--font-sans);cursor:pointer;padding:2px 6px;border-radius:6px;border:1px solid rgba(139,92,246,0.3)">Disattiva</button>
+    <span style="font-family:var(--font-sans);font-size:12px;color:#a78bfa;font-weight:600">Incognito Mode — nothing is saved, clears on refresh</span>
+    <button onclick="toggleIncognito()" style="margin-left:auto;background:none;border:none;color:#a78bfa;font-size:11px;font-family:var(--font-sans);cursor:pointer;padding:2px 6px;border-radius:6px;border:1px solid rgba(139,92,246,0.3)">Disable</button>
   </div>
   <div class="chat-body" id="chatBody">
     <div id="emptyState" style="display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center">
@@ -1219,7 +1219,7 @@ button { touch-action: manipulation; }
     <div class="settings-group">
       <div class="settings-row" onclick="openLangSheet()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        <div class="settings-row-text"><div class="settings-row-label" id="settingsLangLabel">Lingua</div><div class="settings-row-sub" id="settingsLangValue">Italiano</div></div>
+        <div class="settings-row-text"><div class="settings-row-label" id="settingsLangLabel">Language</div><div class="settings-row-sub" id="settingsLangValue">English</div></div>
         <div class="settings-row-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
       </div>
       <div class="settings-row">
@@ -1302,7 +1302,7 @@ button { touch-action: manipulation; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <div class="settings-row-text">
           <div class="settings-row-label">Account</div>
-          <div class="settings-row-sub" id="accountSettingsSub">Accedi con Google o GitHub</div>
+          <div class="settings-row-sub" id="accountSettingsSub">Sign in with Google or GitHub</div>
         </div>
         <div class="settings-row-right">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
@@ -1322,12 +1322,12 @@ button { touch-action: manipulation; }
       <!-- Provider selector chips -->
       <div style="display:flex;gap:8px;padding:0 16px 12px;flex-wrap:wrap">
         <button id="provBtn_auto"  onclick="setPollinationsMode('auto')"  class="prov-chip active">🔁 Auto</button>
-        <button id="provBtn_cloud" onclick="setPollinationsMode('cloud')" class="prov-chip">☁️ Solo Cloud</button>
-        <button id="provBtn_local" onclick="setPollinationsMode('local')" class="prov-chip">🖥 Solo Locale</button>
+        <button id="provBtn_cloud" onclick="setPollinationsMode('cloud')" class="prov-chip">☁️ Cloud Only</button>
+        <button id="provBtn_local" onclick="setPollinationsMode('local')" class="prov-chip">🖥 Local Only</button>
       </div>
       <div style="padding:0 16px 10px;font-family:var(--font-sans);font-size:11px;color:var(--text3);line-height:1.5">
-        <span style="color:#4ade80;font-weight:700">Cloud:</span> <strong style="color:var(--text2)">GPT-4.1 / GPT-4o / DeepSeek-R1 / Qwen-Coder</strong> via Pollinations · gratis, nessuna chiave.<br>
-        <span style="color:#a78bfa;font-weight:700">Locale:</span> Gira <strong style="color:var(--text2)">in-browser</strong> via WebGPU · privacy totale · offline.
+        <span style="color:#4ade80;font-weight:700">Cloud:</span> <strong style="color:var(--text2)">GPT-4.1 / GPT-4o / DeepSeek-R1 / Qwen-Coder</strong> via Pollinations · free, no key.<br>
+        <span style="color:#a78bfa;font-weight:700">Local:</span> Runs <strong style="color:var(--text2)">in-browser</strong> via WebGPU · full privacy · offline.
       </div>
       <!-- Custom API Key button -->
       <div class="settings-row" onclick="openApiKeySheet()" style="cursor:pointer;border-top:1px solid var(--border)">
@@ -1346,12 +1346,12 @@ button { touch-action: manipulation; }
         <svg style="flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
         <div class="settings-row-text" style="flex:1;min-width:0">
           <div class="settings-row-label">Local AI · On-device</div>
-          <div class="settings-row-sub" id="webllmStatus">Non caricato — parte al primo messaggio locale</div>
+          <div class="settings-row-sub" id="webllmStatus">Not loaded — starts on first local message</div>
         </div>
-        <button onclick="preloadWebLLM()" style="padding:7px 18px;border-radius:12px;border:1.5px solid var(--accent);background:rgba(var(--accentRgb),0.1);color:var(--accent);font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;" id="webllmPreloadBtn">Precarica</button>
+        <button onclick="preloadWebLLM()" style="padding:7px 18px;border-radius:12px;border:1.5px solid var(--accent);background:rgba(var(--accentRgb),0.1);color:var(--accent);font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;" id="webllmPreloadBtn">Preload</button>
       </div>
       <div style="padding:6px 16px 10px;font-family:var(--font-sans);font-size:11px;color:var(--text3);line-height:1.5">
-        <span style="color:var(--accent)">Modello attivo:</span> <span id="webllmCurrentModel">Qwen2.5-0.5B (più veloce)</span>
+        <span style="color:var(--accent)">Active model:</span> <span id="webllmCurrentModel">Qwen2.5-0.5B (fastest)</span>
       </div>
     </div>
 
@@ -1425,8 +1425,8 @@ button { touch-action: manipulation; }
 <div class="vsheet" id="langSheet">
   <div class="vsheet-handle"></div>
   <div class="vsheet-header">
-    <span class="vsheet-title" id="langSheetTitle">Lingua / Language</span>
-    <button class="vsheet-done" onclick="closeLangSheet()" id="langDoneBtn">Fine</button>
+    <span class="vsheet-title" id="langSheetTitle">Language</span>
+    <button class="vsheet-done" onclick="closeLangSheet()" id="langDoneBtn">Done</button>
   </div>
   <div class="vsheet-list" id="langSheetList"><!-- populated by JS --></div>
 </div>
@@ -1648,7 +1648,7 @@ const MODELS = {
 /* ══════════════════════════════════════════
    STATE
 ══════════════════════════════════════════ */
-let currentModel        = 'Quar';
+let currentModel        = ls('currentModel', 'Quar');
 let conversationHistory = [];
 const MAX_HISTORY_TURNS = 120; // 60 user+assistant pairs → ~½MB max; prevents localStorage overflow
 let isTyping            = false;
@@ -2026,12 +2026,11 @@ function finishWelcome() {
 function initAfterWelcome() {
   updateUserUI();
   setGreeting();
-  applyTheme('Quar');
   loadRecentChats();
   renderMemoriesSettings();
-  loadSettings();
+  loadSettings(); // loadSettings now restores currentModel and applyTheme
   _updateVoiceLockUI();
-  _applyUiLang(); // apply saved language on startup
+  _applyUiLang();
 }
 
 function updateUserUI() {
@@ -2170,6 +2169,20 @@ function restoreChat(id) {
     }
   });
   scrollBottom();
+}
+
+function deleteChat(id) {
+  const chats = getChats().filter(c => c.id !== id);
+  lsSet('saved_chats', chats);
+  if (currentChatId === id) {
+    currentChatId = null;
+    conversationHistory = [];
+    document.getElementById('messages').innerHTML = '';
+    showEmptyState();
+  }
+  loadRecentChats();
+  showToast('Chat deleted');
+  haptic && haptic();
 }
 
 function relativeTime(ts) {
@@ -2485,14 +2498,17 @@ const VOICES = [
   { id:'ws_zh_m',    name:'中文 M',      desc:'Male · 中文',              provider:'ws', wsLang:'zh-CN', wsGender:'m', emoji:'🇨🇳', color:'#5b8def' },
   // ── Web Speech · Korean ──
   { id:'ws_ko_f',    name:'한국어 F',    desc:'Female · 한국어',           provider:'ws', wsLang:'ko-KR', wsGender:'f', emoji:'🇰🇷', color:'#9b6ecf' },
-  // ── Kokoro Premium (requires ~150MB download, use Studio for best results) ──
-  { id:'ko_af_heart',   name:'Heart ✨',  desc:'US Female · Kokoro Premium',     provider:'ko', koV:'af_heart',   wsLang:'en-US', wsGender:'f', emoji:'✨', color:'#d4714a' },
-  { id:'ko_af_sky',     name:'Sky ✨',    desc:'US Female · Kokoro Premium',     provider:'ko', koV:'af_sky',     wsLang:'en-US', wsGender:'f', emoji:'✨', color:'#5b8def' },
-  { id:'ko_af_bella',   name:'Bella ✨',  desc:'US Female · Kokoro Premium',     provider:'ko', koV:'af_bella',   wsLang:'en-US', wsGender:'f', emoji:'✨', color:'#9b6ecf' },
-  { id:'ko_am_adam',    name:'Adam ✨',   desc:'US Male · Kokoro Premium',       provider:'ko', koV:'am_adam',    wsLang:'en-US', wsGender:'m', emoji:'✨', color:'#4db37e' },
-  { id:'ko_am_michael', name:'Michael ✨',desc:'US Male · Kokoro Premium',       provider:'ko', koV:'am_michael', wsLang:'en-US', wsGender:'m', emoji:'✨', color:'#7fb05e' },
-  { id:'ko_bf_emma',    name:'Emma ✨',   desc:'UK Female · Kokoro Premium',     provider:'ko', koV:'bf_emma',    wsLang:'en-GB', wsGender:'f', emoji:'✨', color:'#cf6ea0' },
-  { id:'ko_bm_george',  name:'George ✨', desc:'UK Male · Kokoro Premium',       provider:'ko', koV:'bm_george',  wsLang:'en-GB', wsGender:'m', emoji:'✨', color:'#5b8def' },
+  // ── Kokoro Premium (requires ~80MB download) ──
+  { id:'ko_af_heart',   name:'Heart ✨',   desc:'US Female · Kokoro',  provider:'ko', koV:'af_heart',   wsLang:'en-US', wsGender:'f', emoji:'✨', color:'#d4714a' },
+  { id:'ko_af_bella',   name:'Bella ✨',   desc:'US Female · Kokoro',  provider:'ko', koV:'af_bella',   wsLang:'en-US', wsGender:'f', emoji:'✨', color:'#9b6ecf' },
+  { id:'ko_af_nova',    name:'Nova ✨',    desc:'US Female · Kokoro',  provider:'ko', koV:'af_nova',    wsLang:'en-US', wsGender:'f', emoji:'✨', color:'#e07a52' },
+  { id:'ko_af_sky',     name:'Sky ✨',     desc:'US Female · Kokoro',  provider:'ko', koV:'af_sky',     wsLang:'en-US', wsGender:'f', emoji:'✨', color:'#5b8def' },
+  { id:'ko_am_adam',    name:'Adam ✨',    desc:'US Male · Kokoro',    provider:'ko', koV:'am_adam',    wsLang:'en-US', wsGender:'m', emoji:'✨', color:'#4db37e' },
+  { id:'ko_am_echo',    name:'Echo ✨',    desc:'US Male · Kokoro',    provider:'ko', koV:'am_echo',    wsLang:'en-US', wsGender:'m', emoji:'✨', color:'#5b8def' },
+  { id:'ko_am_michael', name:'Michael ✨', desc:'US Male · Kokoro',    provider:'ko', koV:'am_michael', wsLang:'en-US', wsGender:'m', emoji:'✨', color:'#7fb05e' },
+  { id:'ko_bf_emma',    name:'Emma ✨',    desc:'UK Female · Kokoro',  provider:'ko', koV:'bf_emma',    wsLang:'en-GB', wsGender:'f', emoji:'✨', color:'#cf6ea0' },
+  { id:'ko_bm_george',  name:'George ✨',  desc:'UK Male · Kokoro',    provider:'ko', koV:'bm_george',  wsLang:'en-GB', wsGender:'m', emoji:'✨', color:'#5b8def' },
+  { id:'ko_bm_daniel',  name:'Daniel ✨',  desc:'UK Male · Kokoro',    provider:'ko', koV:'bm_daniel',  wsLang:'en-GB', wsGender:'m', emoji:'✨', color:'#a78bfa' },
 ];
 
 const colorModes = ['Dark', 'Light', 'System'];
@@ -2602,6 +2618,7 @@ function selectCustomPersona(idx, el) {
   WEBLLM_MODELS[p.name] = 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC';
   
   currentModel = p.name;
+  lsSet('currentModel', p.name);
   document.getElementById('pillName').textContent = p.name;
   const dot = document.getElementById('personaDot');
   if (dot) { dot.style.background = p.color; dot.style.boxShadow = `0 0 6px ${p.color}`; }
@@ -3125,15 +3142,7 @@ function renderModelSheet() {
 
 function openModelSheet() {
   renderModelSheet();
-  // Update pill to reflect active mode
-  if (customApiKey?.key) {
-    const prov = PROVIDER_MODELS[customApiKey.provider];
-    const modelShort = customApiKey.model.split('/').pop();
-    document.getElementById('pillName').textContent = (prov?.name || 'Custom') + ' · ' + modelShort;
-  } else if (selectedCloudModelId) {
-    const m = CLOUD_MODEL_OPTIONS.find(x => x.id === selectedCloudModelId);
-    document.getElementById('pillName').textContent = (m?.name || selectedCloudModelId) + ' ☁️';
-  }
+  _updateModelPillLabel();
   document.getElementById('sheetOverlay').classList.add('open');
   document.getElementById('modelSheet').classList.add('open');
 }
@@ -3146,17 +3155,17 @@ function selectCustomModel(modelId) {
   customApiKey.model = modelId;
   lsSet('customApiKey', customApiKey);
   _selectedApiModel = modelId;
-  const prov = PROVIDER_MODELS[customApiKey.provider];
-  document.getElementById('pillName').textContent = prov?.name + ' · ' + modelId.split('/').pop();
   closeModelSheet();
-  showToast('✅ Modello: ' + modelId.split('/').pop());
+  showToast('✅ Model: ' + modelId.split('/').pop());
   haptic && haptic();
   renderModelSheet();
   _updateApiKeySettingsSub();
+  _updateModelPillLabel();
 }
 
 function selectModel(name, el) {
   currentModel = name;
+  lsSet('currentModel', name);
   document.querySelectorAll('.sheet-check').forEach(c => c.style.opacity = '0');
   if (el) el.querySelector('.sheet-check').style.opacity = '1';
   document.getElementById('pillName').textContent = name + ' v' + MODELS[name].version;
@@ -3603,8 +3612,6 @@ async function _callOnline(messages, stream, onChunk, sig) {
     stream,
     max_tokens: ls('aiMaxTokens', 4096),
     temperature: ls('aiTemperature', 0.72),
-    seed: Math.floor(Math.random() * 999999),
-    private: true,
   };
 
   _showInferenceBadge('cloud');
@@ -4030,6 +4037,31 @@ async function sendMsg() {
   let streamingText  = null;
   let accText        = '';
   let cursor         = null;
+  let _rafPending    = false;   // throttle: only one rAF scheduled at a time
+  let _lastRendered  = '';      // avoid re-rendering if text hasn't changed
+
+  // Throttled render — runs at most once per animation frame regardless of chunk rate
+  function _scheduleRender() {
+    if (_rafPending) return;
+    _rafPending = true;
+    requestAnimationFrame(() => {
+      _rafPending = false;
+      if (!streamingText || accText === _lastRendered) return;
+      _lastRendered = accText;
+      const safeText = accText
+        .replace(/<artifact[^>]*>[\s\S]*?<\/artifact>/g, '[artifact]')
+        .replace(/<artifact[^>]*>[\s\S]*$/, '[generating artifact…]')
+        .replace(/<think>[\s\S]*?<\/think>/g, '')
+        .replace(/<think>[\s\S]*$/, '');
+      try {
+        streamingText.innerHTML = safeParse(safeText) + '<span class="streaming-cursor"></span>';
+      } catch(e) {
+        streamingText.textContent = safeText;
+      }
+      const b = document.getElementById('chatBody');
+      if (b && b.scrollTop >= b.scrollHeight - b.clientHeight - 120) scrollBottom();
+    });
+  }
 
   try {
     const rawReply = await callAPI(txt, attachment, (delta, full) => {
@@ -4054,19 +4086,7 @@ async function sendMsg() {
         streamingText.appendChild(cursor);
       }
       accText = full;
-      // Render partial markdown (strip incomplete artifact/think tags)
-      const safeText = full
-        .replace(/<artifact[^>]*>[\s\S]*?<\/artifact>/g, '[artifact]')
-        .replace(/<artifact[^>]*>[\s\S]*$/, '[generating artifact…]')
-        .replace(/<think>[\s\S]*?<\/think>/g, '')
-        .replace(/<think>[\s\S]*$/, '');
-      try {
-        streamingText.innerHTML = safeParse(safeText) + '<span class="streaming-cursor"></span>';
-      } catch(e) {
-        streamingText.textContent = safeText;
-        streamingText.appendChild(cursor);
-      }
-      scrollBottom();
+      _scheduleRender();
     }, searchAddendum);
 
     // Streaming complete — remove live div, render final
@@ -4574,19 +4594,20 @@ function loadSettings() {
   _updateSearchUI();
   // Apply UI language
   _applyUiLang();
-  // Restore custom API key UI
+  // Restore persona pill label
+  const savedModel = ls('currentModel', 'Quar');
+  if (MODELS[savedModel]) {
+    currentModel = savedModel;
+    const pillEl = document.getElementById('pillName');
+    if (pillEl) pillEl.textContent = savedModel + ' v' + (MODELS[savedModel]?.version || '1');
+    applyTheme(savedModel);
+  }
+  // Restore custom API key UI (only update modelPillLabel mini pill, not persona pillName)
   if (customApiKey?.key) {
     _updateApiKeySettingsSub();
     _updateAccountUI();
-    const prov = PROVIDER_MODELS[customApiKey.provider];
-    const modelShort = customApiKey.model.split('/').pop();
-    const pillEl = document.getElementById('pillName');
-    if (pillEl) pillEl.textContent = (prov?.name || 'Custom') + ' · ' + modelShort;
-  } else if (selectedCloudModelId) {
-    const m = CLOUD_MODEL_OPTIONS.find(x => x.id === selectedCloudModelId);
-    const pillEl = document.getElementById('pillName');
-    if (pillEl && m) pillEl.textContent = m.name + ' ☁️';
   }
+  _updateModelPillLabel();
   // Restore login state
   _updateAccountUI();
 }
@@ -4601,15 +4622,15 @@ function updateWebLLMStatus() {
     statusEl.innerHTML = '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;flex-shrink:0"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> Cloud · ' + onlineInfo.label;
     statusEl.style.color = '#4ade80';
   } else if (_webllmEngine && _webllmModelId) {
-    statusEl.innerHTML = '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;flex-shrink:0"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Locale · ' + _webllmModelId.split('-q')[0];
+    statusEl.innerHTML = '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;flex-shrink:0"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Local · ' + _webllmModelId.split('-q')[0];
     statusEl.style.color = '#a78bfa';
   } else {
-    statusEl.innerHTML = '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;flex-shrink:0"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Locale · non precaricato';
+    statusEl.innerHTML = '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;flex-shrink:0"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Local · not preloaded';
     statusEl.style.color = 'var(--text3)';
   }
   if (modelEl) {
     const lm = WEBLLM_AVAILABLE.find(m => m.id === selectedLocalModelId);
-    modelEl.textContent = (lm ? lm.name : selectedLocalModelId?.split('-q')[0]) || 'Qwen2.5-0.5B (più veloce)';
+    modelEl.textContent = (lm ? lm.name : selectedLocalModelId?.split('-q')[0]) || 'Qwen2.5-0.5B (fastest)';
   }
   updateProviderUI();
 }
@@ -4623,7 +4644,7 @@ function updateProviderUI() {
   // Provider status sub
   const sub = document.getElementById('providerStatusSub');
   if (sub) {
-    const labels = { auto:'Auto · Cloud online, Locale offline', cloud:'Solo Cloud (Pollinations)', local:'Solo Locale (WebGPU)' };
+    const labels = { auto:'Auto · Cloud online, Local offline', cloud:'Cloud Only (Pollinations)', local:'Local Only (WebGPU)' };
     sub.textContent = customApiKey?.key
       ? '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;flex-shrink:0"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.77-7.77zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg> Custom API Key · ' + (PROVIDER_MODELS[customApiKey.provider]?.name || customApiKey.provider)
       : labels[pollinationsMode] || '';
@@ -4639,11 +4660,11 @@ function _syncArenaAvailability() {
   if (cloudForced) {
     arenaBtn.style.opacity = '0.35';
     arenaBtn.style.pointerEvents = 'none';
-    arenaBtn.title = 'Arena non disponibile in modalità Solo Cloud';
+    arenaBtn.title = 'Arena not available in Cloud Only mode';
   } else {
     arenaBtn.style.opacity = '';
     arenaBtn.style.pointerEvents = '';
-    arenaBtn.title = 'Arena — confronta modelli';
+    arenaBtn.title = 'Arena — compare models';
   }
 }
 
@@ -4653,7 +4674,7 @@ function setPollinationsMode(mode) {
   updateProviderUI();
   updateWebLLMStatus();
   haptic && haptic();
-  const msgs = { auto:'Auto: Cloud online, Locale offline', cloud:'Solo Cloud attivo — Arena disabilitata', local:'Solo Locale attivo — privacy totale' };
+  const msgs = { auto:'Auto: Cloud online, Local offline', cloud:'Cloud Only — Arena disabled', local:'Local Only — full privacy' };
   showToast(msgs[mode] || '');
 }
 
@@ -4782,13 +4803,22 @@ function loginWithGitHub() {
 
 async function confirmGitHubLogin() {
   const inp = document.getElementById('githubUsernameInput');
-  const username = inp?.value.trim();
-  if (!username) { showToast(t('loginWithGitHub')); return; }
+  const raw = inp?.value.trim();
+  if (!raw) { showToast('Enter your GitHub token'); return; }
   const msg = document.getElementById('loginStatusMsg');
   if (msg) msg.textContent = '⏳ ' + t('loginLoadingProfile');
   try {
-    const res = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}`);
-    if (!res.ok) throw new Error(t('userNotFound'));
+    // Require a Personal Access Token (proves ownership of the account)
+    const isToken = raw.startsWith('ghp_') || raw.startsWith('github_pat_') || raw.startsWith('gho_');
+    if (!isToken) {
+      if (msg) msg.textContent = '❌ Please enter a GitHub Personal Access Token (starts with ghp_ or github_pat_)';
+      showToast('Use a GitHub PAT token, not a username');
+      return;
+    }
+    const res = await fetch('https://api.github.com/user', {
+      headers: { 'Authorization': 'token ' + raw }
+    });
+    if (!res.ok) throw new Error(t('userNotFound') + ' — check your token');
     const profile = await res.json();
     helixUser = {
       provider: 'github',
@@ -5014,11 +5044,6 @@ function saveApiKey() {
   lsSet('customApiKey', customApiKey);
   _updateApiKeyStatus();
   _updateApiKeySettingsSub();
-  // Update pill name to reflect custom model
-  const prov = PROVIDER_MODELS[_selectedApiProvider];
-  const modelShort = _selectedApiModel.split('/').pop();
-  const pillEl = document.getElementById('pillName');
-  if (pillEl) pillEl.textContent = (prov?.name || 'Custom') + ' · ' + modelShort;
   closeApiKeySheet();
   _updateModelPillLabel();
   showToast('✅ ' + t('apiKeyLabel') + ': ' + (prov?.name || _selectedApiProvider) + ' / ' + modelShort);
@@ -5052,9 +5077,10 @@ function removeApiKey() {
   lsSet('customApiKey', null);
   _updateApiKeyStatus();
   _updateApiKeySettingsSub();
-  // Reset pill to current Helix model
+  // Restore pill to current persona
   const pillEl = document.getElementById('pillName');
-  if (pillEl) pillEl.textContent = currentModel + ' v' + MODELS[currentModel].version;
+  if (pillEl) pillEl.textContent = currentModel + ' v' + (MODELS[currentModel]?.version || '1');
+  _updateModelPillLabel();
   closeApiKeySheet();
   showToast('Key removed · Back to Pollinations');
   renderModelSheet();
@@ -5235,16 +5261,16 @@ async function _callOpenAICompatible(endpoint, messages, stream, onChunk, sig, k
 
 async function preloadWebLLM() {
   const btn = document.getElementById('webllmPreloadBtn');
-  if (btn) { btn.textContent = 'Caricamento…'; btn.disabled = true; }
+  if (btn) { btn.textContent = 'Loading…'; btn.disabled = true; }
   const modelId = selectedLocalModelId || 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC';
   try {
     await _getWebLLMEngine(modelId);
-    showToast('Modello pronto ✓ — risposte offline istantanee');
+    showToast('Model ready ✓ — instant offline replies');
     updateWebLLMStatus();
-    if (btn) btn.textContent = '✓ Pronto';
+    if (btn) btn.textContent = '✓ Ready';
   } catch(e) {
-    showToast('Errore caricamento: ' + e.message);
-    if (btn) { btn.textContent = 'Precarica'; btn.disabled = false; }
+    showToast('Load error: ' + e.message);
+    if (btn) { btn.textContent = 'Preload'; btn.disabled = false; }
   }
 }
 
@@ -5325,13 +5351,19 @@ async function testVoice(id) {
 
 async function _runTestVoice(v, sample, id, _done) {
   if (v.provider === 'ko') {
-    try {
-      const url = await _ttsKokoroJS(sample, v.koV);
-      testAudio = new Audio(url);
-      testAudio.onended = () => { URL.revokeObjectURL(url); _done(); };
-      testAudio.onerror = () => { URL.revokeObjectURL(url); _done(); };
-      testAudio.play(); return;
-    } catch(e) { /* Kokoro unavailable, fall back to WebSpeech */ }
+    // Only use Kokoro if already loaded — avoid triggering 80MB download on a Test tap
+    if (_kokoroTTS) {
+      try {
+        const url = await _ttsKokoroJS(sample, v.koV);
+        testAudio = new Audio(url);
+        testAudio.onended = () => { URL.revokeObjectURL(url); _done(); };
+        testAudio.onerror = () => { URL.revokeObjectURL(url); _done(); };
+        testAudio.play(); return;
+      } catch(e) { /* fall through to WebSpeech */ }
+    } else {
+      // Kokoro not loaded — preview with WebSpeech, remind user to load it in Studio
+      showToast('⚡ Preview via WebSpeech · Open Kokoro Studio to load the full voice', 4000);
+    }
   }
   // Use WebSpeech directly — fast and reliable
   _wsSpeak(sample, v.wsLang || 'en-US', v.wsGender || 'f', () => { testAudio = null; _done(); });
@@ -5364,7 +5396,7 @@ function _renderVoiceSheet() {
 
   let html = '';
   if (matchVoices.length) {
-    html += `<div class="vsheet-section-label">${localeLang} · Consigliato</div>`;
+    html += `<div class="vsheet-section-label">${localeLang} · Recommended</div>`;
     html += matchVoices.map(voiceRow).join('');
   }
   if (wsOther.length) {
@@ -5401,7 +5433,7 @@ function cleanForTTS(text) {
 ══════════════════════════════════════════ */
 
 // ── Kokoro.js state ──────────────────────
-let _kokoroTTS        = null;   // loaded model instance
+let _kokoroTTS        = null;   // loaded KokoroTTS instance
 let _kokoroLoadPromise = null;  // singleton load promise
 
 async function _loadKokoroJS() {
@@ -5410,17 +5442,16 @@ async function _loadKokoroJS() {
 
   _kokoroLoadPromise = (async () => {
     try {
-      // Wait for @huggingface/transformers to load
-      if (!window._hfTransformersReady) {
+      // Wait for kokoro-js ESM module to load
+      if (!window._kokoroJsReady) {
         await new Promise((res, rej) => {
-          if (window._hfTransformersReady) return res();
-          window.addEventListener('hf-transformers-ready', res, { once: true });
-          setTimeout(() => rej(new Error('HF Transformers timeout — check internet connection and reload')), 20000);
+          if (window._kokoroJsReady) return res();
+          window.addEventListener('kokoro-js-ready', res, { once: true });
+          setTimeout(() => rej(new Error('kokoro-js timeout — check your connection and reload')), 30000);
         });
       }
-      if (!window._hfPipeline) throw new Error('@huggingface/transformers not available — reload the page');
-      showToast('🎙️ Kokoro: starting download… (~80MB)', 6000);
-      let _lastPct = -1;
+      if (!window._KokoroTTS) throw new Error('kokoro-js unavailable — reload the page');
+      showToast('🎙️ Kokoro: starting download… (~80MB, once only)', 6000);
 
       // Update any visible progress bars in Kokoro Studio
       const _ksUpdateBar = (pct) => {
@@ -5432,35 +5463,31 @@ async function _loadKokoroJS() {
         if (label) label.textContent = pct < 100 ? `Downloading Kokoro… ${pct}%` : '⚙️ Loading model…';
       };
 
-      _kokoroTTS = await window._hfPipeline(
-        'text-to-speech',
-        'onnx-community/Kokoro-82M-v1.0',
+      _kokoroTTS = await window._KokoroTTS.from_pretrained(
+        'onnx-community/Kokoro-82M-v1.0-ONNX',
         {
           dtype: 'q8',
           device: 'wasm',
           progress_callback: (p) => {
             if (p.status === 'downloading' && p.total > 0) {
               const pct = Math.round((p.loaded / p.total) * 100);
-              if (pct !== _lastPct) {
-                _lastPct = pct;
-                _ksUpdateBar(pct);
-                if (pct % 10 === 0) showToast(`⬇️ Kokoro ${pct}%…`, 4000);
-              }
+              _ksUpdateBar(pct);
+              if (pct % 20 === 0) showToast(`⬇️ Kokoro ${pct}%…`, 3000);
             } else if (p.status === 'loading') {
               _ksUpdateBar(100);
-              showToast('⚙️ Kokoro: loading model…', 4000);
+              showToast('⚙️ Kokoro: loading…', 3000);
             }
           }
         }
       );
       const barWrap2 = document.getElementById('ksDownloadBarWrap');
       if (barWrap2) barWrap2.style.display = 'none';
-      showToast('✅ Kokoro voice model ready');
+      showToast('✅ Kokoro ready!');
       return _kokoroTTS;
     } catch(e) {
       _kokoroLoadPromise = null;
       _kokoroTTS = null;
-      showToast('❌ Kokoro failed: ' + e.message, 4000);
+      showToast('❌ Kokoro: ' + e.message, 5000);
       throw e;
     }
   })();
@@ -5469,9 +5496,10 @@ async function _loadKokoroJS() {
 }
 
 async function _ttsKokoroJS(text, voiceId) {
-  const model = await _loadKokoroJS();
+  const tts = await _loadKokoroJS();
   const voice = voiceId || _getVoice(selectedVoiceId).koV || 'af_heart';
-  const result = await model(text.slice(0, 500), { voice });
+  // kokoro-js returns a RawAudio object with .audio (Float32Array) and .sampling_rate
+  const result = await tts.generate(text.slice(0, 500), { voice });
   const wav = _float32ToWav(result.audio, result.sampling_rate);
   return URL.createObjectURL(wav);
 }
@@ -5502,24 +5530,33 @@ function _float32ToWav(float32, sampleRate) {
 function _getWSVoice(wsLang, wsGender) {
   const SS = window.speechSynthesis;
   if (!SS) return null;
-  // getVoices() may return [] on first call (async load); fall back to any available voice
   const voices = SS.getVoices();
-  if (!voices.length) return null;  // caller (_wsSpeak) handles this via onvoiceschanged
+  if (!voices.length) return null;
 
   const lang2 = (wsLang || 'en').slice(0, 2).toLowerCase();
-  // Filter by language prefix
   let langMatches = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith(lang2));
-  if (!langMatches.length) langMatches = voices; // any voice as fallback
+  if (!langMatches.length) langMatches = voices;
 
   // Gender matching via common name keywords
-  const fKw = ['female','woman','girl','samantha','victoria','fiona','tessa','moira','veena','ioana','kanya','lekha','damayanti','sin-ji','ting-ting','mei-jia','yuna','kyunghun','sora'];
-  const mKw = ['male','man','boy','alex','daniel','thomas','diego','jorge','juan','carlos','jorge','miguel','luca','franco','rishi','kyoko','otoya','meijia'];
+  const fKw = ['female','woman','girl','samantha','victoria','fiona','tessa','moira','veena','ioana','kanya','lekha','damayanti','sin-ji','ting-ting','mei-jia','yuna','sora','alice','google italiano','google us','karen','lee','mónica','paulina'];
+  const mKw = ['male','man','boy','alex','daniel','thomas','diego','jorge','juan','carlos','miguel','luca','franco','rishi','kyoko','otoya','fred','google uk','bruce','david','albert'];
   const kw = wsGender === 'f' ? fKw : mKw;
   const genderMatch = langMatches.filter(v => kw.some(k => v.name.toLowerCase().includes(k)));
 
-  // Prefer local service voices (they sound better)
-  const locals = (genderMatch.length ? genderMatch : langMatches).filter(v => v.localService);
-  return (locals.length ? locals : (genderMatch.length ? genderMatch : langMatches))[0] || null;
+  // If we have gender matches, prefer local service voices
+  if (genderMatch.length) {
+    const locals = genderMatch.filter(v => v.localService);
+    return (locals.length ? locals : genderMatch)[0];
+  }
+
+  // No keyword match — try positional heuristic:
+  // Most platforms list female voice first, male voice second for the same language
+  const locals = langMatches.filter(v => v.localService);
+  const pool = locals.length ? locals : langMatches;
+  if (wsGender === 'm' && pool.length > 1) {
+    return pool[1]; // second voice tends to be male
+  }
+  return pool[0] || null;
 }
 
 // ── WebSpeech speak helper ─────────────────────────────────
@@ -5527,22 +5564,54 @@ function _wsSpeak(text, wsLang, wsGender, onDone) {
   const SS = window.speechSynthesis;
   if (!SS) { onDone?.(); return; }
   SS.cancel();
+
   const utt = new SpeechSynthesisUtterance(text.slice(0, 500));
   const voice = _getWSVoice(wsLang || 'en-US', wsGender || 'f');
   if (voice) utt.voice = voice;
   utt.lang = wsLang || 'en-US';
   utt.rate = 1.0;
+
   let done = false;
-  const resolve = () => { if (!done) { done = true; onDone?.(); } };
-  utt.onend = resolve;
+  let keepAlive = null;
+  const resolve = () => {
+    if (!done) {
+      done = true;
+      if (keepAlive) { clearInterval(keepAlive); keepAlive = null; }
+      onDone?.();
+    }
+  };
+  utt.onend   = resolve;
   utt.onerror = resolve;
-  // Ensure voices are loaded (async on some browsers)
-  const speak = () => { SS.speak(utt); };
-  if (SS.getVoices().length) speak();
-  else { window.speechSynthesis.onvoiceschanged = () => { speak(); window.speechSynthesis.onvoiceschanged = null; }; setTimeout(speak, 800); }
-  // Android/iOS fallback: onend sometimes never fires
-  const estMs = Math.max(3000, text.split(' ').length * 350);
-  setTimeout(resolve, estMs + 2000);
+
+  // Android/iOS fallback: onend sometimes never fires — hard timeout
+  const estMs = Math.max(3000, text.split(' ').length * 380);
+  setTimeout(resolve, estMs + 3000);
+
+  // Android Chrome: TTS silently stops after ~15s (background throttle).
+  // Workaround: pause+resume every 12s to keep the engine alive.
+  if (estMs > 10000) {
+    keepAlive = setInterval(() => {
+      if (!done && SS.speaking) { SS.pause(); SS.resume(); }
+    }, 12000);
+  }
+
+  // Delay speak() slightly after cancel() — prevents Android TTS deadlock.
+  // Single speak path via flag — eliminates onvoiceschanged + setTimeout race.
+  let spoken = false;
+  const doSpeak = () => {
+    if (spoken || done) return;
+    spoken = true;
+    SS.speak(utt);
+  };
+
+  const voices = SS.getVoices();
+  if (voices.length) {
+    setTimeout(doSpeak, 60); // brief pause after cancel()
+  } else {
+    // Voices not ready yet — wait for event, with a single fallback timeout
+    SS.onvoiceschanged = () => { SS.onvoiceschanged = null; setTimeout(doSpeak, 60); };
+    setTimeout(() => { SS.onvoiceschanged = null; doSpeak(); }, 1000);
+  }
 }
 
 function _ttsWebSpeech(text) {
@@ -5551,10 +5620,10 @@ function _ttsWebSpeech(text) {
     if (!SS) { reject(new Error('no WebSpeech')); return; }
     SS.cancel();
     const utt = new SpeechSynthesisUtterance(text.slice(0, 300));
-    utt.onend   = () => resolve(null);   // resolve AFTER speech finishes
+    utt.onend   = () => resolve(null);
     utt.onerror = (e) => reject(e);
-    SS.speak(utt);
-    // NOTE: do NOT resolve here — wait for onend so callers know when speech is done
+    // Small delay after cancel() prevents Android TTS deadlock
+    setTimeout(() => SS.speak(utt), 60);
   });
 }
 
@@ -5592,19 +5661,22 @@ async function speakText(text, btn) {
 
   const v = _getVoice(selectedVoiceId);
 
-  // ── Kokoro premium voices: try Kokoro first, fall back to WebSpeech ──
+  // ── Kokoro premium voices: only use if already loaded, else fall through to WebSpeech ──
   if (v.provider === 'ko') {
-    try {
-      const url = await _ttsKokoroJS(clean, v.koV);
-      const audio = new Audio(url);
-      currentAudio = audio;
-      audio.onended = () => { try { URL.revokeObjectURL(url); } catch(e){} currentAudio = null; _done(); };
-      audio.onerror = () => { try { URL.revokeObjectURL(url); } catch(e){} currentAudio = null; _wsSpeak(clean, v.wsLang || 'en-US', v.wsGender || 'f', _done); };
-      audio.play().catch(() => _wsSpeak(clean, v.wsLang || 'en-US', v.wsGender || 'f', _done));
-      return;
-    } catch(e) {
-      // Kokoro unavailable (not loaded / no internet) → fall through to WebSpeech
+    if (_kokoroTTS) {
+      try {
+        const url = await _ttsKokoroJS(clean, v.koV);
+        const audio = new Audio(url);
+        currentAudio = audio;
+        audio.onended = () => { try { URL.revokeObjectURL(url); } catch(e){} currentAudio = null; _done(); };
+        audio.onerror = () => { try { URL.revokeObjectURL(url); } catch(e){} currentAudio = null; _wsSpeak(clean, v.wsLang || 'en-US', v.wsGender || 'f', _done); };
+        audio.play().catch(() => _wsSpeak(clean, v.wsLang || 'en-US', v.wsGender || 'f', _done));
+        return;
+      } catch(e) {
+        // Kokoro error → fall through to WebSpeech
+      }
     }
+    // Kokoro not yet loaded — use WebSpeech silently (no freeze, no 80MB download)
   }
 
   // ── WebSpeech — primary for all 'ws' voices and Kokoro fallback ──
@@ -5666,11 +5738,14 @@ function _addProVoiceRequiredMsg() {
 let _srRecognition  = null;
 let _srActive       = false;
 
-// Pre-warm voice list — avoids getVoices() returning [] on first call in some browsers
+// Pre-warm voice list once — avoids getVoices() returning [] on first call
 if (window.speechSynthesis) {
-  const _warmVoices = () => window.speechSynthesis.getVoices();
-  _warmVoices();
-  window.speechSynthesis.onvoiceschanged = _warmVoices;
+  window.speechSynthesis.getVoices();
+  // One-time listener: populate cache, then release the handler
+  window.speechSynthesis.onvoiceschanged = () => {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = null; // don't hold it permanently
+  };
 }
 
 function _webSpeechSTTStart(onTranscript, onError) {
@@ -5926,7 +6001,7 @@ async function vmodeConfirm() {
     _vmSetAiReply('', false);
     vmTranscript = '';
     _vmReset();
-    if (e.name !== 'AbortError') showToast('Errore risposta');
+    if (e.name !== 'AbortError') showToast('Response error');
   }
 }
 
@@ -6195,9 +6270,9 @@ async function shareImage(btn) {
   const orig   = btn.innerHTML;
 
   const data = _getImgData(parseInt(imgId));
-  if (!data) { showToast('Immagine ancora in salvataggio… riprova'); return; }
+  if (!data) { showToast('Image still saving… try again'); return; }
 
-  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite;width:12px;height:12px"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Creando link…`;
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite;width:12px;height:12px"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Creating link…`;
   btn.disabled = true;
 
   try {
@@ -6208,12 +6283,12 @@ async function shareImage(btn) {
     if (url.length > 2_000_000) { throw new Error('too_big'); }
 
     await navigator.clipboard.writeText(url);
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copiato!`;
-    showToast('🔗 Link copiato — condivisibile ovunque!');
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+    showToast('🔗 Link copied — shareable anywhere!');
   } catch(e) {
     // Fallback: copy just the base64 image
-    try { await navigator.clipboard.writeText(data.dataUrl); showToast('📋 Immagine copiata come base64 (file troppo grande per URL)'); }
-    catch(e2) { showToast('Condivisione non riuscita'); }
+    try { await navigator.clipboard.writeText(data.dataUrl); showToast('📋 Image copied as base64 (file too large for URL)'); }
+    catch(e2) { showToast('Share failed'); }
     btn.innerHTML = orig;
   } finally {
     btn.disabled = false;
@@ -6238,7 +6313,7 @@ function _decodeImgFromUrl(encoded) {
    CHAT SHARING — encode in URL hash
 ══════════════════════════════════════════ */
 async function shareCurrentChat(btn) {
-  if (!conversationHistory.length) { showToast('Nessun messaggio da condividere'); return; }
+  if (!conversationHistory.length) { showToast('No messages to share'); return; }
   const orig = btn ? btn.innerHTML : '';
   if (btn) { btn.disabled = true; btn.innerHTML = '…'; }
 
@@ -6257,10 +6332,10 @@ async function shareCurrentChat(btn) {
     const url     = `https://helixai-4-0.github.io/#chat=${encoded}`;
 
     await navigator.clipboard.writeText(url);
-    showToast('🔗 Link chat copiato!');
-    if (btn) { btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copiato!`; }
+    showToast('🔗 Chat link copied!');
+    if (btn) { btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied!`; }
   } catch(e) {
-    showToast('Condivisione non riuscita: ' + e.message);
+    showToast('Share failed: ' + e.message);
     if (btn) btn.innerHTML = orig;
   } finally {
     if (btn) { btn.disabled = false; setTimeout(() => { btn.innerHTML = orig; }, 2000); }
@@ -6285,8 +6360,8 @@ async function shareCurrentChat(btn) {
       <img src="${data.d}" style="max-width:100%;max-height:70vh;border-radius:14px;object-fit:contain;" alt="${escAttr(data.p||'')}">
       <div style="font-family:-apple-system,sans-serif;color:#555;font-size:13px;text-align:center;max-width:340px;line-height:1.5">${escHtml(data.p||'')}</div>
       <div style="display:flex;gap:12px;margin-top:8px">
-        <a href="${data.d}" download="helix-image.png" style="padding:10px 22px;border-radius:12px;background:#d4714a;color:white;font-family:-apple-system,sans-serif;font-size:14px;font-weight:600;text-decoration:none">Scarica</a>
-        <button onclick="this.closest('#imgViewerOverlay').remove();history.replaceState(null,'',location.pathname)" style="padding:10px 22px;border-radius:12px;border:1.5px solid #333;background:transparent;color:#aaa;font-family:-apple-system,sans-serif;font-size:14px;cursor:pointer;">Apri Helix</button>
+        <a href="${data.d}" download="helix-image.png" style="padding:10px 22px;border-radius:12px;background:#d4714a;color:white;font-family:-apple-system,sans-serif;font-size:14px;font-weight:600;text-decoration:none">Download</a>
+        <button onclick="this.closest('#imgViewerOverlay').remove();history.replaceState(null,'',location.pathname)" style="padding:10px 22px;border-radius:12px;border:1.5px solid #333;background:transparent;color:#aaa;font-family:-apple-system,sans-serif;font-size:14px;cursor:pointer;">Open Helix</button>
       </div>`;
     document.addEventListener('DOMContentLoaded', () => document.body.appendChild(ov));
     return;
@@ -6315,7 +6390,7 @@ function _loadSharedChat(payload) {
       <div style="font-family:var(--font-sans);font-size:17px;font-weight:700;color:var(--text)">💬 Chat condivisa</div>
       <div style="font-family:var(--font-sans);font-size:14px;color:var(--text2);line-height:1.5">"${escHtml(payload.title || 'Chat')}"<br><span style="color:var(--text3);font-size:12px">${payload.history.length} messaggi · ${escHtml(payload.model || '')}</span></div>
       <div style="display:flex;gap:10px">
-        <button onclick="document.body.removeChild(this.closest('[style*=z-index:5000]'))" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-family:var(--font-sans);font-size:14px;cursor:pointer">Annulla</button>
+        <button onclick="document.body.removeChild(this.closest('[style*=z-index:5000]'))" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-family:var(--font-sans);font-size:14px;cursor:pointer">Cancel</button>
         <button id="_importChatBtn" style="flex:1;padding:12px;border-radius:12px;border:none;background:var(--accent);color:white;font-family:var(--font-sans);font-size:14px;font-weight:600;cursor:pointer">Importa chat</button>
       </div>
     </div>`;
@@ -6357,12 +6432,12 @@ function toggleIncognito() {
     banner.style.display = 'flex';
     // start fresh session — clear current chat only
     newChat();
-    showToast('🕵️ Modalità incognita attiva');
+    showToast('🕵️ Incognito mode on');
   } else {
     btn.style.color  = '';
     btn.style.background = '';
     banner.style.display = 'none';
-    showToast('Modalità incognita disattivata');
+    showToast('Incognito mode off');
   }
   haptic && haptic();
 }
@@ -6920,20 +6995,35 @@ const KS_VOICES = [
   // American Female
   { id:'af_heart',   emoji:'❤️',  name:'Heart',    desc:'US Female · Warm',     gender:'F', lang:'en' },
   { id:'af_bella',   emoji:'🌸',  name:'Bella',    desc:'US Female · Soft',     gender:'F', lang:'en' },
+  { id:'af_aoede',   emoji:'🎵',  name:'Aoede',    desc:'US Female · Melodic',  gender:'F', lang:'en' },
+  { id:'af_jessica', emoji:'✨',  name:'Jessica',  desc:'US Female · Bright',   gender:'F', lang:'en' },
+  { id:'af_kore',    emoji:'🌙',  name:'Kore',     desc:'US Female · Calm',     gender:'F', lang:'en' },
   { id:'af_nicole',  emoji:'🎧',  name:'Nicole',   desc:'US Female · Breathy',  gender:'F', lang:'en' },
+  { id:'af_nova',    emoji:'⭐',  name:'Nova',     desc:'US Female · Clear',    gender:'F', lang:'en' },
+  { id:'af_river',   emoji:'🌊',  name:'River',    desc:'US Female · Smooth',   gender:'F', lang:'en' },
   { id:'af_sarah',   emoji:'🌟',  name:'Sarah',    desc:'US Female · Natural',  gender:'F', lang:'en' },
   { id:'af_sky',     emoji:'☁️',  name:'Sky',      desc:'US Female · Airy',     gender:'F', lang:'en' },
+  { id:'af_alloy',   emoji:'🔮',  name:'Alloy',    desc:'US Female · Neutral',  gender:'F', lang:'en' },
   // American Male
   { id:'am_adam',    emoji:'🗿',  name:'Adam',     desc:'US Male · Deep',       gender:'M', lang:'en' },
+  { id:'am_echo',    emoji:'🔊',  name:'Echo',     desc:'US Male · Clear',      gender:'M', lang:'en' },
+  { id:'am_eric',    emoji:'🎙️', name:'Eric',     desc:'US Male · Strong',     gender:'M', lang:'en' },
+  { id:'am_fenrir',  emoji:'🐺',  name:'Fenrir',   desc:'US Male · Powerful',   gender:'M', lang:'en' },
+  { id:'am_liam',    emoji:'🎸',  name:'Liam',     desc:'US Male · Casual',     gender:'M', lang:'en' },
   { id:'am_michael', emoji:'🎤',  name:'Michael',  desc:'US Male · Neutral',    gender:'M', lang:'en' },
-  // British
+  { id:'am_onyx',    emoji:'🖤',  name:'Onyx',     desc:'US Male · Deep',       gender:'M', lang:'en' },
+  { id:'am_puck',    emoji:'🧚',  name:'Puck',     desc:'US Male · Lively',     gender:'M', lang:'en' },
+  { id:'am_santa',   emoji:'🎅',  name:'Santa',    desc:'US Male · Jolly',      gender:'M', lang:'en' },
+  // British Female
   { id:'bf_emma',    emoji:'🫖',  name:'Emma',     desc:'UK Female · Crisp',    gender:'F', lang:'en' },
   { id:'bf_isabella',emoji:'💂',  name:'Isabella', desc:'UK Female · Elegant',  gender:'F', lang:'en' },
+  { id:'bf_alice',   emoji:'🌹',  name:'Alice',    desc:'UK Female · Refined',  gender:'F', lang:'en' },
+  { id:'bf_lily',    emoji:'🌷',  name:'Lily',     desc:'UK Female · Gentle',   gender:'F', lang:'en' },
+  // British Male
   { id:'bm_george',  emoji:'🎩',  name:'George',   desc:'UK Male · Rich',       gender:'M', lang:'en' },
   { id:'bm_lewis',   emoji:'📚',  name:'Lewis',    desc:'UK Male · Formal',     gender:'M', lang:'en' },
-  // Italian (experimental)
-  { id:'if_sara',    emoji:'🍕',  name:'Sara',     desc:'IT Female · Melodic',  gender:'F', lang:'it' },
-  { id:'im_nicola',  emoji:'🎭',  name:'Nicola',   desc:'IT Male · Warm',       gender:'M', lang:'it' },
+  { id:'bm_daniel',  emoji:'🎭',  name:'Daniel',   desc:'UK Male · Warm',       gender:'M', lang:'en' },
+  { id:'bm_fable',   emoji:'📖',  name:'Fable',    desc:'UK Male · Storyteller',gender:'M', lang:'en' },
 ];
 
 let _ksSelectedVoice = 'af_heart';
@@ -7027,14 +7117,12 @@ async function ksGenerate() {
   }
 
   try {
-    const model = await _loadKokoroJS();
-    _ksSetStatus('Synthesizing speech…');
-
+    const tts = await _loadKokoroJS();
+    _ksSetStatus('Sintetizzando il parlato…');
     const speed = parseFloat(document.getElementById('ksSpeed').value) || 1.0;
-    const style = parseFloat(document.getElementById('ksStyle').value) || 1.0;
 
-    // HF transformers pipeline returns { audio: Float32Array, sampling_rate: number }
-    const result = await model(text.slice(0, 1000), {
+    // kokoro-js returns RawAudio with .audio (Float32Array) and .sampling_rate
+    const result = await tts.generate(text.slice(0, 1000), {
       voice: _ksSelectedVoice,
       speed,
     });
@@ -7062,7 +7150,10 @@ async function ksGenerate() {
 
   } catch(e) {
     console.error('[KS]', e);
-    _ksSetStatus('❌ ' + (e.message || 'Error generating speech'));
+    const isAuth = e.message?.toLowerCase().includes('unauthorized') || e.message?.toLowerCase().includes('403');
+    _ksSetStatus(isAuth
+      ? '❌ Kokoro: network error. Check your connection and reload the page.'
+      : '❌ ' + (e.message || 'Error generating speech'));
   } finally {
     _ksGenerating = false;
     btn.disabled = false;
@@ -7224,10 +7315,11 @@ document.head.appendChild(_ksStyleEl);
       </button>
       <!-- GitHub username input (shown after clicking GitHub) -->
       <div id="githubInputSection" style="display:none;margin-top:8px;flex-direction:column;gap:10px">
-        <input id="githubUsernameInput" type="text" placeholder="Your GitHub username…"
+        <input id="githubUsernameInput" type="password" placeholder="ghp_… or github_pat_…"
           style="width:100%;padding:14px 18px;border-radius:14px;border:1.5px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font-sans);font-size:16px;outline:none"
           onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
           onkeydown="if(event.key==='Enter')confirmGitHubLogin()">
+        <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);line-height:1.5;padding:0 2px">Generate a token at <span style="color:var(--accent)">github.com/settings/tokens</span> — proves you own the account</div>
         <button id="githubConfirmBtn" onclick="confirmGitHubLogin()" style="width:100%;padding:14px;border-radius:14px;border:none;background:var(--accent);color:white;font-family:var(--font-sans);font-size:16px;font-weight:600;cursor:pointer">Confirm</button>
         <button id="githubCancelBtn" onclick="document.getElementById('githubInputSection').style.display='none'" style="width:100%;padding:10px;border-radius:14px;border:1px solid var(--border);background:transparent;color:var(--text3);font-family:var(--font-sans);font-size:14px;cursor:pointer">Cancel</button>
       </div>
