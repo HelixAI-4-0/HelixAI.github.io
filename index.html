@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Helix AI</title>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400;1,500&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <script>
 // ── PWA Manifest (inline blob so single-file works) ──
 (function injectManifest(){
@@ -91,6 +91,22 @@ function safeParse(md) {
     return (window.DOMPurify ? DOMPurify.sanitize(raw, { USE_PROFILES: { html: true } }) : raw);
   } catch(e) { return ''; }
 }
+
+// Strip Pollinations promotional/notice blocks injected by the API
+function stripPollinationsNotice(text) {
+  if (!text) return text;
+  // Split into paragraphs (blank-line separated) and remove any containing Pollinations notice.
+  // This avoids fragile emoji-based regex that breaks when the API changes formatting.
+  const NOTICE_RE = /important notice|pollinations\.ai|legacy text api|enter\.pollinations|text\.pollinations|migrate to our new|anonymous requests to the text/i;
+  const paragraphs = text.split(/\n\n+/);
+  const clean = paragraphs.filter(p => !NOTICE_RE.test(p));
+  // If everything got stripped (entire reply was just the notice), return empty string
+  text = clean.join('\n\n').trim();
+  // Belt-and-suspenders: also strip any remaining single lines with Pollinations content
+  text = text.replace(/^.*(?:pollinations\.ai|Pollinations legacy|enter\.pollinations).*$/gm, '');
+  text = text.replace(/\n{3,}/g, '\n\n').trim();
+  return text;
+}
 </script>
 <script type="module">
   import { KokoroTTS } from 'https://esm.sh/kokoro-js';
@@ -105,12 +121,6 @@ function safeParse(md) {
   window.dispatchEvent(new Event('webllm-ready'));
 </script>
 <style>
-@font-face { font-family:'anthropicSans'; src:local('Styrene B'),local('StyreneB-Regular'); font-weight:400; }
-@font-face { font-family:'anthropicSans'; src:local('Styrene B Medium'),local('StyreneB-Medium'); font-weight:500; }
-@font-face { font-family:'anthropicSans'; src:local('Styrene B Bold'),local('StyreneB-Bold'); font-weight:700; }
-@font-face { font-family:'anthropicSerif'; src:local('Tiempos Text'),local('TiemposText-Regular'); font-weight:400; }
-@font-face { font-family:'anthropicSerif'; src:local('Tiempos Text Light'),local('TiemposText-Light'); font-weight:300; }
-
 :root {
   --bg:#131211; --bg2:#1c1917; --bg3:#22201d;
   --surface:#2a2825; --surface2:#32302d; --border:#3a3835;
@@ -118,8 +128,8 @@ function safeParse(md) {
   --accent:#d4714a; --accent2:#e07a52; --accentRgb:212,113,74;
   --green:#30d158; --red:#ff453a;
   --sidebar-width:300px;
-  --font-sans:'anthropicSans','DM Sans',-apple-system,sans-serif;
-  --font-serif:'anthropicSerif','Newsreader',Georgia,serif;
+  --font-sans:'Plus Jakarta Sans',-apple-system,'Segoe UI',sans-serif;
+  --font-serif:'Lora',Georgia,serif;
   --theme-transition:background 0.35s ease,border-color 0.35s ease,color 0.35s ease;
 }
 body.light-mode {
@@ -558,7 +568,30 @@ body.theme-shifting { animation:themeShift 0.4s ease; }
 .prov-chip:active { transform:scale(0.96) }
 .copy-btn { display:inline-flex; align-items:center; gap:4px; border:none; background:none; color:var(--text3); font-family:var(--font-sans); font-size:11px; cursor:pointer; padding:4px 2px; border-radius:6px; transition:color 0.15s; }
 .copy-btn:active { color:var(--accent); }
-/* ─── RESPONSIVE — TABLET & DESKTOP ─── */
+/* ─── SCROLL TO BOTTOM BTN ─── */
+.scroll-bottom-fab {
+  position:fixed; bottom:110px; right:16px; z-index:200;
+  width:38px; height:38px; border-radius:50%;
+  background:var(--bg2); border:1px solid var(--border);
+  box-shadow:0 4px 16px rgba(0,0,0,0.3);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:opacity 0.22s, transform 0.22s;
+  opacity:0; pointer-events:none; transform:translateY(8px);
+  color:var(--text2);
+}
+.scroll-bottom-fab.visible { opacity:1; pointer-events:all; transform:translateY(0); }
+.scroll-bottom-fab:active { transform:scale(0.88); }
+.scroll-bottom-fab svg { width:18px; height:18px; }
+
+/* ─── MSG TIMESTAMP ─── */
+.msg-timestamp {
+  font-family:var(--font-sans); font-size:10px; color:var(--text3);
+  text-align:right; padding-right:2px; margin-top:2px;
+  opacity:0; transition:opacity 0.2s; user-select:none;
+  pointer-events:none;
+}
+.msg-user-wrap:hover .msg-timestamp,
+.msg-user-wrap.ts-show .msg-timestamp { opacity:1; }
 @media (min-width: 600px) {
   .messages-wrap { max-width: 640px; }
   .input-wrap { padding: 10px 20px 32px; }
@@ -847,7 +880,7 @@ button { touch-action: manipulation; }
 .user-actions {
   display:flex; align-items:center; gap:6px;
   opacity:0; pointer-events:none;
-  transform:translateY(-4px);
+  transform:translateY(4px);
   transition:opacity 0.18s ease, transform 0.18s ease;
 }
 .user-actions.show { opacity:1; pointer-events:all; transform:translateY(0); }
@@ -1137,20 +1170,12 @@ button { touch-action: manipulation; }
       </button>
     </div>
     <div style="display:flex;align-items:center;gap:2px;flex-shrink:0">
-      <button class="ghost-icon" id="arenaBtn" onclick="openArena()" title="Arena — compare models" style="color:var(--accent)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-      </button>
       <button class="ghost-icon" id="incognitoBtn" onclick="toggleIncognito()" title="Incognito mode">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
       </button>
     </div>
   </div>
-  <!-- Incognito banner -->
-  <div id="incognitoBanner" style="display:none;background:rgba(139,92,246,0.12);border-bottom:1px solid rgba(139,92,246,0.25);padding:6px 16px;align-items:center;gap:8px;flex-shrink:0">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-    <span style="font-family:var(--font-sans);font-size:12px;color:#a78bfa;font-weight:600">Incognito Mode — nothing is saved, clears on refresh</span>
-    <button onclick="toggleIncognito()" style="margin-left:auto;background:none;border:none;color:#a78bfa;font-size:11px;font-family:var(--font-sans);cursor:pointer;padding:2px 6px;border-radius:6px;border:1px solid rgba(139,92,246,0.3)">Disable</button>
-  </div>
+
   <div class="chat-body" id="chatBody">
     <div id="emptyState" style="display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center">
       <div class="helix-logo">
@@ -1316,7 +1341,7 @@ button { touch-action: manipulation; }
         <svg style="flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
         <div class="settings-row-text" style="flex:1;min-width:0">
           <div class="settings-row-label">AI Provider</div>
-          <div class="settings-row-sub" id="providerStatusSub">Auto · Cloud quando online</div>
+          <div class="settings-row-sub" id="providerStatusSub">Auto · Cloud online, Local offline</div>
         </div>
       </div>
       <!-- Provider selector chips -->
@@ -1334,7 +1359,7 @@ button { touch-action: manipulation; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
         <div class="settings-row-text">
           <div class="settings-row-label">Personal API Key</div>
-          <div class="settings-row-sub" id="apiKeySettingsSub">Use your own OpenAI, Anthropic, Groq… key</div>
+          <div class="settings-row-sub" id="apiKeySettingsSub">Use your own OpenAI, Anthropic, Groq, Gemini, xAI, DeepSeek… key</div>
         </div>
         <div class="settings-row-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
       </div>
@@ -1355,26 +1380,6 @@ button { touch-action: manipulation; }
       </div>
     </div>
 
-    <!-- HF Token for image generation -->
-    <div class="settings-group">
-      <div class="settings-row" style="cursor:default">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        <div class="settings-row-text">
-          <div class="settings-row-label">HF Token (Image Gen)</div>
-          <div class="settings-row-sub" id="hfTokenSub">Optional · Enables FLUX.1-dev (higher quality)</div>
-        </div>
-      </div>
-      <div class="settings-input-row">
-        <div style="position:relative">
-          <input id="hfTokenInput" type="password" placeholder="hf_…" class="settings-inline-input"
-            value=""
-            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)';saveHFToken(this.value.trim())"
-            style="padding-right:48px">
-          <button onclick="this.previousElementSibling.type=this.previousElementSibling.type==='password'?'text':'password'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-        </div>
-        <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:6px;line-height:1.5">Get a free token at <span style="color:var(--accent)">huggingface.co/settings/tokens</span> · Stored locally only</div>
-      </div>
-    </div>
 
     <!-- Kokoro AI Studio -->
     <div class="settings-group">
@@ -1437,6 +1442,12 @@ button { touch-action: manipulation; }
     <span class="vsheet-title">Choose Voice</span>
     <button class="vsheet-done" onclick="closeVoiceSheet()">Done</button>
   </div>
+  <!-- TTS Language selector row -->
+  <div style="padding:8px 20px 0;flex-shrink:0">
+    <div style="font-family:var(--font-sans);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px" id="ttsLangLabel">TTS Language</div>
+    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;-webkit-overflow-scrolling:touch;scrollbar-width:none" id="ttsLangChips"><!-- populated by JS --></div>
+  </div>
+  <div style="height:1px;background:var(--border);flex-shrink:0;margin:0 0 0 0"></div>
   <div class="vsheet-list" id="vsheetList"><!-- populated by JS --></div>
 </div>
 
@@ -1684,6 +1695,7 @@ let testingVoiceId  = null;
 let testAudio       = null;
 let uiLang          = ls('uiLang', 'en');
 let sttLang         = ls('sttLang', 'en-US');
+let ttsLang         = ls('ttsLang', ''); // separate TTS language (empty = follow sttLang)
 
 // ── i18n ──────────────────────────────────────
 const I18N = {
@@ -1719,6 +1731,8 @@ const I18N = {
     loginGoogleDisabled:'Google login not configured — use GitHub or an API key',
     loginSuccess:'Signed in · Hello', loginError:'Error', userNotFound:'User not found',
     confirmLogout:'Sign out of your account?', signedOut:'Signed out',
+    ttsVoiceLang:'TTS Language', ttsVoiceLangSub:'Language spoken by the AI voice',
+    scrollDown:'Scroll to bottom', copyOk:'Copied!',
   },
   it: {
     tapToSpeak:'Tocca per parlare', listening:'In ascolto…', thinking:'Sto pensando…',
@@ -1752,6 +1766,8 @@ const I18N = {
     loginGoogleDisabled:'Login Google non configurato — usa GitHub o una chiave API',
     loginSuccess:'Accesso riuscito · Ciao', loginError:'Errore', userNotFound:'Utente non trovato',
     confirmLogout:'Disconnettersi dall\'account?', signedOut:'Disconnesso',
+    ttsVoiceLang:'Lingua TTS', ttsVoiceLangSub:'Lingua parlata dalla voce AI',
+    scrollDown:'Vai in fondo', copyOk:'Copiato!',
   },
   es: {
     tapToSpeak:'Toca para hablar', listening:'Escuchando…', thinking:'Pensando…',
@@ -1785,6 +1801,8 @@ const I18N = {
     loginGoogleDisabled:'Login de Google no configurado — usa GitHub o una clave API',
     loginSuccess:'Sesión iniciada · Hola', loginError:'Error', userNotFound:'Usuario no encontrado',
     confirmLogout:'¿Cerrar sesión?', signedOut:'Sesión cerrada',
+    ttsVoiceLang:'Idioma TTS', ttsVoiceLangSub:'Idioma hablado por la voz de IA',
+    scrollDown:'Ir al final', copyOk:'¡Copiado!',
   },
   fr: {
     tapToSpeak:'Appuyer pour parler', listening:'Écoute…', thinking:'Réflexion…',
@@ -1818,6 +1836,8 @@ const I18N = {
     loginGoogleDisabled:'Login Google non configuré — utilisez GitHub ou une clé API',
     loginSuccess:'Connecté · Bonjour', loginError:'Erreur', userNotFound:'Utilisateur non trouvé',
     confirmLogout:'Se déconnecter du compte ?', signedOut:'Déconnecté',
+    ttsVoiceLang:'Langue TTS', ttsVoiceLangSub:'Langue parlée par la voix IA',
+    scrollDown:'Aller en bas', copyOk:'Copié !',
   },
   de: {
     tapToSpeak:'Tippen zum Sprechen', listening:'Zuhören…', thinking:'Denken…',
@@ -1851,6 +1871,8 @@ const I18N = {
     loginGoogleDisabled:'Google-Login nicht konfiguriert — nutze GitHub oder API-Schlüssel',
     loginSuccess:'Angemeldet · Hallo', loginError:'Fehler', userNotFound:'Benutzer nicht gefunden',
     confirmLogout:'Vom Konto abmelden?', signedOut:'Abgemeldet',
+    ttsVoiceLang:'TTS-Sprache', ttsVoiceLangSub:'Sprache der KI-Stimme',
+    scrollDown:'Nach unten', copyOk:'Kopiert!',
   },
   pt: {
     tapToSpeak:'Toque para falar', listening:'Ouvindo…', thinking:'Pensando…',
@@ -1884,6 +1906,8 @@ const I18N = {
     loginGoogleDisabled:'Login do Google não configurado — use GitHub ou uma chave API',
     loginSuccess:'Conectado · Olá', loginError:'Erro', userNotFound:'Usuário não encontrado',
     confirmLogout:'Sair da conta?', signedOut:'Desconectado',
+    ttsVoiceLang:'Idioma TTS', ttsVoiceLangSub:'Idioma falado pela voz IA',
+    scrollDown:'Ir ao final', copyOk:'Copiado!',
   },
   zh: {
     tapToSpeak:'点击说话', listening:'聆听中…', thinking:'思考中…',
@@ -1917,6 +1941,8 @@ const I18N = {
     loginGoogleDisabled:'Google 登录未配置 — 请使用 GitHub 或 API 密钥',
     loginSuccess:'已登录 · 你好', loginError:'错误', userNotFound:'用户未找到',
     confirmLogout:'退出账户？', signedOut:'已退出',
+    ttsVoiceLang:'TTS语言', ttsVoiceLangSub:'AI语音的朗读语言',
+    scrollDown:'滚动到底部', copyOk:'已复制！',
   },
   ja: {
     tapToSpeak:'タップして話す', listening:'聴取中…', thinking:'考え中…',
@@ -1950,6 +1976,8 @@ const I18N = {
     loginGoogleDisabled:'Googleログインが未設定 — GitHubまたはAPIキーを使用してください',
     loginSuccess:'ログインしました · こんにちは', loginError:'エラー', userNotFound:'ユーザーが見つかりません',
     confirmLogout:'アカウントからログアウトしますか？', signedOut:'ログアウトしました',
+    ttsVoiceLang:'TTS言語', ttsVoiceLangSub:'AI音声の話す言語',
+    scrollDown:'一番下へ', copyOk:'コピー済み！',
   },
   ko: {
     tapToSpeak:'탭하여 말하기', listening:'듣는 중…', thinking:'생각 중…',
@@ -1983,6 +2011,8 @@ const I18N = {
     loginGoogleDisabled:'Google 로그인이 설정되지 않음 — GitHub 또는 API 키를 사용하세요',
     loginSuccess:'로그인됨 · 안녕하세요', loginError:'오류', userNotFound:'사용자를 찾을 수 없음',
     confirmLogout:'계정에서 로그아웃하시겠습니까?', signedOut:'로그아웃됨',
+    ttsVoiceLang:'TTS 언어', ttsVoiceLangSub:'AI 음성이 말하는 언어',
+    scrollDown:'맨 아래로', copyOk:'복사됨!',
   },
 };
 function t(key) { return (I18N[uiLang]||I18N.en)[key] || I18N.en[key] || key; }
@@ -2031,6 +2061,7 @@ function initAfterWelcome() {
   loadSettings(); // loadSettings now restores currentModel and applyTheme
   _updateVoiceLockUI();
   _applyUiLang();
+  _initScrollFab();
 }
 
 function updateUserUI() {
@@ -2718,40 +2749,16 @@ function renderCloudModelSheet() {
   const container = document.getElementById('cloudModelSheetOptions');
   if (!container) return;
 
-  // Auto cloud option
-  const cloudAutoSel = !selectedCloudModelId && !customApiKey?.key && pollinationsMode !== 'local';
-  const cloudAutoHtml = `<div class="sheet-option" onclick="selectCloudModel(null);closeCloudModelSheet()">
-    <div class="sheet-option-left">
-      <div class="sheet-model-swatch" style="background:rgba(34,197,94,0.12);color:#4ade80;font-size:15px">🔁</div>
-      <div class="sheet-option-info">
-        <span class="sheet-option-name" style="color:#4ade80">Auto (persona default)</span>
-        <div class="sheet-option-sub">Uses each persona's assigned model</div>
-      </div>
-    </div>
-    <div class="sheet-check" style="opacity:${cloudAutoSel?1:0}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
-  </div>`;
+  const isLocalOnly = pollinationsMode === 'local';
 
-  const cloudHtml = CLOUD_MODEL_OPTIONS.map(m => {
-    const isSel = selectedCloudModelId === m.id && !customApiKey?.key;
-    return `<div class="sheet-option" onclick="selectCloudModelAndClose('${m.id}')">
-      <div class="sheet-option-left">
-        <div class="sheet-model-swatch" style="background:${m.color}22;color:${m.color};font-size:15px">${m.icon}</div>
-        <div class="sheet-option-info">
-          <span class="sheet-option-name">${m.name}</span>
-          <div class="sheet-option-sub">${m.sub}</div>
-        </div>
-      </div>
-      <div class="sheet-check" style="opacity:${isSel?1:0}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
-    </div>`;
-  }).join('');
-
+  // ── LOCAL MODELS SECTION ──
   const localHtml = WEBLLM_AVAILABLE.map(m => {
-    const isLoaded  = _webllmModelId === m.id;
+    const isLoaded   = _webllmModelId === m.id;
     const isSelected = pollinationsMode === 'local' && selectedLocalModelId === m.id;
     const statusBadge = isLoaded
       ? `<span style="font-size:10px;background:rgba(139,92,246,0.2);color:#a78bfa;padding:2px 7px;border-radius:6px;font-weight:700">Loaded</span>`
       : `<button onclick="event.stopPropagation();downloadLocalModel('${m.id}', this)" style="padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-family:var(--font-sans);font-size:11px;cursor:pointer;white-space:nowrap" id="dlbtn_${m.id.replace(/[^a-z0-9]/gi,'_')}">↓ ${m.size}</button>`;
-    const brandIcon = LOCAL_MODEL_ICONS[m.brand] || LOCAL_MODEL_ICONS.llama;
+    const brandIcon  = LOCAL_MODEL_ICONS[m.brand] || LOCAL_MODEL_ICONS.llama;
     const brandColor = m.color || '#a78bfa';
     return `<div class="sheet-option" onclick="selectLocalModelCloud('${m.id}')">
       <div class="sheet-option-left">
@@ -2768,49 +2775,96 @@ function renderCloudModelSheet() {
     </div>`;
   }).join('');
 
-  // Custom API Key section if active
-  let apiKeyHtml = '';
-  if (customApiKey?.key) {
-    const prov = PROVIDER_MODELS[customApiKey.provider];
-    const provModels = prov?.models || [];
-const ICONS_JS = {
-  openai: '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M22.28 9.82a5.98 5.98 0 0 0-.52-4.91 6.05 6.05 0 0 0-6.51-2.9 6.06 6.06 0 0 0-10.27 2.17 5.98 5.98 0 0 0-3.98 2.9 6.05 6.05 0 0 0 .74 7.1 5.98 5.98 0 0 0 .51 4.91 6.05 6.05 0 0 0 6.51 2.9A5.98 5.98 0 0 0 13.26 24a6.06 6.06 0 0 0 5.77-4.21 5.99 5.99 0 0 0 3.98-2.9 6.06 6.06 0 0 0-.73-7.07zM13.26 22.43a4.48 4.48 0 0 1-2.88-1.04l.14-.08 4.78-2.76a.79.79 0 0 0 .4-.68v-6.74l2.02 1.17a.07.07 0 0 1 .04.05v5.58a4.5 4.5 0 0 1-4.5 4.5zM3.6 18.31a4.47 4.47 0 0 1-.53-3.01l.14.08 4.78 2.76a.77.77 0 0 0 .78 0l5.84-3.37v2.33a.08.08 0 0 1-.03.06L9.74 19.95a4.5 4.5 0 0 1-6.14-1.64zM2.34 7.9a4.48 4.48 0 0 1 2.36-1.98V11.6a.77.77 0 0 0 .39.68l5.81 3.35-2.02 1.17a.08.08 0 0 1-.07 0L4.2 14.72A4.5 4.5 0 0 1 2.34 7.9zM18.94 11.76l-5.83-3.36 2.02-1.16a.08.08 0 0 1 .07 0l4.68 2.69a4.5 4.5 0 0 1-.68 8.1v-5.6a.79.79 0 0 0-.26-.67zM20.95 8.74l-.14-.09-4.77-2.78a.78.78 0 0 0-.79 0L9.41 9.23V6.9a.07.07 0 0 1 .03-.06l4.83-2.79a4.5 4.5 0 0 1 6.68 4.66zM8.31 12.86l-2.02-1.16a.08.08 0 0 1-.04-.06V6.07a4.5 4.5 0 0 1 7.38-3.45l-.14.08-4.78 2.76a.79.79 0 0 0-.4.68v6.72zm1.1-2.37 2.6-1.5 2.61 1.5v3l-2.6 1.5-2.61-1.5v-3z"/></svg>',
-  anthropic: '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M13.83 3.5H10.17L2 20.5h3.93l1.62-3.7h8.9l1.62 3.7H22L13.83 3.5zM9.18 13.2 12 6.9l2.82 6.3H9.18z"/></svg>',
-  gemini: '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M12 2.5c0 5.24-4.26 9.5-9.5 9.5 5.24 0 9.5 4.26 9.5 9.5 0-5.24 4.26-9.5 9.5-9.5-5.24 0-9.5-4.26-9.5-9.5z"/></svg>',
-  groq: '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M13 2.05V4.08A8.01 8.01 0 0 1 20 12h-4l4.97 4.97A9.99 9.99 0 0 1 12 22a10 10 0 0 1 0-20c.34 0 .67.02 1 .05zM11 4.08A8 8 0 1 0 19.92 13H16v-2h6A10 10 0 0 0 11 4.08z"/></svg>',
-  openrouter: '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;flex-shrink:0"><path d="M16 3l4 4-4 4m4-4H8m-4 5l-4 4 4 4m-4-4h12"/></svg>',
-  mistral: '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><rect x="2" y="2" width="4.5" height="4.5"/><rect x="8.75" y="2" width="4.5" height="4.5"/><rect x="15.5" y="2" width="4.5" height="4.5"/><rect x="8.75" y="8.75" width="4.5" height="4.5"/><rect x="15.5" y="8.75" width="4.5" height="4.5"/><rect x="2" y="15.5" width="4.5" height="4.5"/><rect x="8.75" y="15.5" width="4.5" height="4.5"/><rect x="15.5" y="15.5" width="4.5" height="4.5"/></svg>',
-  deepseek: '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M21.928 13.17c-.166-.37-.477-.64-.857-.74L18.5 11.7l.35-2.04a1.16 1.16 0 0 0-.47-1.12L15.9 6.76a1.16 1.16 0 0 0-1.22-.07L12 8.06 9.32 6.69a1.16 1.16 0 0 0-1.22.07L5.62 8.54a1.16 1.16 0 0 0-.47 1.12l.35 2.04-2.57.73a1.16 1.16 0 0 0-.76 1.51l.91 2.52a1.16 1.16 0 0 0 1.4.72l1.05-.33.42 2.24a1.16 1.16 0 0 0 1.14.95h5.91 5.91a1.16 1.16 0 0 0 1.14-.95l.42-2.24 1.05.33a1.16 1.16 0 0 0 1.4-.72l.91-2.52a1.16 1.16 0 0 0-.1-.77zM12 15.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0-1.75a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5z"/></svg>',
-  qwen: '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.5 14.5h-9L12 7l4.5 9.5zM10.5 14h3l-1.5-3.5L10.5 14z"/></svg>',
-  llama: '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M6.5 3A2.5 2.5 0 0 0 4 5.5c0 1.06.66 1.96 1.59 2.33L4 18h16l-1.59-10.17A2.5 2.5 0 0 0 20 5.5 2.5 2.5 0 0 0 17.5 3a2.5 2.5 0 0 0-2.45 2.05L12 9.5 8.95 5.05A2.5 2.5 0 0 0 6.5 3z"/></svg>',
-  key: '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;flex-shrink:0"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.77-7.77zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
-  cloud: '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;flex-shrink:0"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>',
-  device: '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;flex-shrink:0"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
-  refresh: '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;flex-shrink:0"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
-};
+  if (isLocalOnly) {
+    // Local-only mode: only show local models
+    container.innerHTML =
+      `<div style="padding:8px 16px 4px;font-family:var(--font-sans);font-size:10px;font-weight:700;color:#a78bfa;letter-spacing:0.1em;text-transform:uppercase">🖥 Local Only Mode · On-device (WebGPU)</div>` +
+      localHtml +
+      `<div style="padding:8px 16px 20px;font-family:var(--font-sans);font-size:11px;color:var(--text3);line-height:1.5">Downloads once · cached forever · requires WebGPU<br>Switch to <em>Auto</em> or <em>Cloud</em> in Settings to use cloud models.</div>`;
+    return;
+  }
 
-    apiKeyHtml = `<div style="padding:8px 16px 4px;font-family:var(--font-sans);font-size:10px;font-weight:700;color:#818cf8;letter-spacing:0.1em;text-transform:uppercase;border-top:1px solid var(--border);margin-top:6px">${ICONS_JS.key} ${prov?.name || 'Custom'} API Key</div>` +
+  // ── FREE CLOUD SECTION (Pollinations) ──
+  const cloudAutoSel = !selectedCloudModelId && !customApiKey && pollinationsMode !== 'local';
+  const cloudAutoHtml = `<div class="sheet-option" onclick="_switchToFreeCloud(null)">
+    <div class="sheet-option-left">
+      <div class="sheet-model-swatch" style="background:rgba(34,197,94,0.12);color:#4ade80;font-size:15px">🔁</div>
+      <div class="sheet-option-info">
+        <span class="sheet-option-name" style="color:#4ade80">Auto (persona default)</span>
+        <div class="sheet-option-sub">Uses each persona's assigned model</div>
+      </div>
+    </div>
+    <div class="sheet-check" style="opacity:${cloudAutoSel?1:0}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+  </div>`;
+
+  const cloudHtml = CLOUD_MODEL_OPTIONS.map(m => {
+    const isSel = selectedCloudModelId === m.id && !customApiKey;
+    return `<div class="sheet-option" onclick="_switchToFreeCloud('${m.id}')">
+      <div class="sheet-option-left">
+        <div class="sheet-model-swatch" style="background:${m.color}22;color:${m.color};font-size:15px">${m.icon}</div>
+        <div class="sheet-option-info">
+          <span class="sheet-option-name">${m.name}</span>
+          <div class="sheet-option-sub">${m.sub}</div>
+        </div>
+      </div>
+      <div class="sheet-check" style="opacity:${isSel?1:0}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+    </div>`;
+  }).join('');
+
+  // ── API KEY SECTIONS — one per provider that has a saved key ──
+  const savedProviderIds = Object.keys(apiKeys).filter(id => apiKeys[id] && PROVIDER_MODELS[id]);
+  let apiKeySectionsHtml = savedProviderIds.map(provId => {
+    const prov = PROVIDER_MODELS[provId];
+    const provModels = prov?.models || [];
+    const provColor = prov?.color || '#818cf8';
+    return `<div style="padding:8px 16px 4px;font-family:var(--font-sans);font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;border-top:1px solid var(--border);margin-top:6px;display:flex;align-items:center;justify-content:space-between">
+        <span style="color:${provColor}">${prov?.icon || '🔑'} ${prov?.name} Key ✓</span>
+        <button onclick="event.stopPropagation();removeProviderKey('${provId}')" style="border:none;background:none;color:var(--red);font-size:11px;font-family:var(--font-sans);cursor:pointer;padding:2px 6px;border-radius:6px;opacity:0.7">Remove</button>
+      </div>` +
       provModels.map(m => {
-        const isSel = customApiKey.model === m.id;
-        return `<div class="sheet-option" onclick="selectCustomModel('${m.id}');closeCloudModelSheet()">
+        const isSel = customApiKey && customApiKey.provider === provId && customApiKey.model === m.id;
+        return `<div class="sheet-option" onclick="_switchToApiKey('${provId}','${m.id}');closeCloudModelSheet()">
           <div class="sheet-option-left">
-            <div class="sheet-model-swatch" style="background:rgba(99,102,241,0.12);color:#818cf8">${prov?.icon || '🔑'}</div>
+            <div class="sheet-model-swatch" style="background:${provColor}22;color:${provColor}">${prov?.icon || '🔑'}</div>
             <div class="sheet-option-info">
               <span class="sheet-option-name">${m.name}</span>
-              <div class="sheet-option-sub">${m.sub}</div>
+              <div class="sheet-option-sub">${m.sub} · ${prov?.name} key</div>
             </div>
           </div>
           <div class="sheet-check" style="opacity:${isSel?1:0}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
         </div>`;
       }).join('');
-  }
+  }).join('');
 
   container.innerHTML =
-    `<div style="padding:6px 16px 4px;font-family:var(--font-sans);font-size:10px;font-weight:700;color:#4ade80;letter-spacing:0.1em;text-transform:uppercase">☁️ Cloud · Pollinations (free)</div>` +
-    cloudAutoHtml + cloudHtml + apiKeyHtml +
+    `<div style="padding:6px 16px 4px;font-family:var(--font-sans);font-size:10px;font-weight:700;color:#4ade80;letter-spacing:0.1em;text-transform:uppercase">☁️ Free Cloud · Pollinations</div>` +
+    cloudAutoHtml + cloudHtml + apiKeySectionsHtml +
     `<div style="padding:10px 16px 4px;font-family:var(--font-sans);font-size:10px;font-weight:700;color:#a78bfa;letter-spacing:0.1em;text-transform:uppercase;border-top:1px solid var(--border);margin-top:6px">🖥 Local · On-device (WebGPU)</div>` +
     localHtml +
-    `<div style="padding:8px 16px 20px;font-family:var(--font-sans);font-size:11px;color:var(--text3);line-height:1.5">Downloads once · cached forever · requires WebGPU</div>`;
+    `<div style="padding:8px 16px 20px;font-family:var(--font-sans);font-size:11px;color:var(--text3);line-height:1.5">Local models download once · cached forever · requires WebGPU</div>`;
+}
+
+// Helper: switch to free Pollinations cloud model (clears any active API key)
+function _switchToFreeCloud(modelId) {
+  customApiKey = null;
+  lsSet('customApiKey', null);
+  selectCloudModel(modelId);
+  _updateModelPillLabel();
+  _updateApiKeyStatus();
+  _updateApiKeySettingsSub();
+  closeCloudModelSheet();
+}
+
+// Helper: switch to a saved API provider+model key
+function _switchToApiKey(providerId, modelId) {
+  const key = apiKeys[providerId];
+  if (!key) { showToast('No key saved for ' + (PROVIDER_MODELS[providerId]?.name || providerId) + ' — add it in Settings'); return; }
+  customApiKey = { provider: providerId, key, model: modelId };
+  lsSet('customApiKey', customApiKey);
+  _updateModelPillLabel();
+  _updateApiKeyStatus();
+  _updateApiKeySettingsSub();
+  showToast('Switched to ' + (PROVIDER_MODELS[providerId]?.name || providerId) + ' · ' + modelId.split('/').pop().slice(0,18));
 }
 
 function selectCloudModelAndClose(modelId) {
@@ -2829,6 +2883,17 @@ function selectLocalModelCloud(modelId) {
 // openModelSheet() is defined below with its full implementation
 let customApiKey = ls('customApiKey', null);
 // { provider:'openai'|'anthropic'|'groq'|'gemini'|'openrouter'|'mistral', key:'...', model:'...' }
+// Multiple saved keys — one per provider
+let apiKeys = ls('apiKeys', {}); // { openai:'sk-...', anthropic:'sk-ant-...', ... }
+// Migrate legacy single key to new multi-key store
+(function _migrateApiKey() {
+  if (customApiKey && customApiKey.key && customApiKey.provider) {
+    if (!apiKeys[customApiKey.provider]) {
+      apiKeys[customApiKey.provider] = customApiKey.key;
+      lsSet('apiKeys', apiKeys);
+    }
+  }
+})();
 let _selectedApiProvider = 'openai';
 let _selectedApiModel    = '';
 
@@ -2846,62 +2911,206 @@ const PROVIDER_MODELS = {
     name:'OpenAI', icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M22.28 9.82a5.98 5.98 0 0 0-.52-4.91 6.05 6.05 0 0 0-6.51-2.9 6.06 6.06 0 0 0-10.27 2.17 5.98 5.98 0 0 0-3.98 2.9 6.05 6.05 0 0 0 .74 7.1 5.98 5.98 0 0 0 .51 4.91 6.05 6.05 0 0 0 6.51 2.9A5.98 5.98 0 0 0 13.26 24a6.06 6.06 0 0 0 5.77-4.21 5.99 5.99 0 0 0 3.98-2.9 6.06 6.06 0 0 0-.73-7.07zM13.26 22.43a4.48 4.48 0 0 1-2.88-1.04l.14-.08 4.78-2.76a.79.79 0 0 0 .4-.68v-6.74l2.02 1.17a.07.07 0 0 1 .04.05v5.58a4.5 4.5 0 0 1-4.5 4.5zM3.6 18.31a4.47 4.47 0 0 1-.53-3.01l.14.08 4.78 2.76a.77.77 0 0 0 .78 0l5.84-3.37v2.33a.08.08 0 0 1-.03.06L9.74 19.95a4.5 4.5 0 0 1-6.14-1.64zM2.34 7.9a4.48 4.48 0 0 1 2.36-1.98V11.6a.77.77 0 0 0 .39.68l5.81 3.35-2.02 1.17a.08.08 0 0 1-.07 0L4.2 14.72A4.5 4.5 0 0 1 2.34 7.9zM18.94 11.76l-5.83-3.36 2.02-1.16a.08.08 0 0 1 .07 0l4.68 2.69a4.5 4.5 0 0 1-.68 8.1v-5.6a.79.79 0 0 0-.26-.67zM20.95 8.74l-.14-.09-4.77-2.78a.78.78 0 0 0-.79 0L9.41 9.23V6.9a.07.07 0 0 1 .03-.06l4.83-2.79a4.5 4.5 0 0 1 6.68 4.66zM8.31 12.86l-2.02-1.16a.08.08 0 0 1-.04-.06V6.07a4.5 4.5 0 0 1 7.38-3.45l-.14.08-4.78 2.76a.79.79 0 0 0-.4.68v6.72zm1.1-2.37 2.6-1.5 2.61 1.5v3l-2.6 1.5-2.61-1.5v-3z"/></svg>', color:'#10a37f',
     endpoint:'https://api.openai.com/v1/chat/completions',
     models:[
-      { id:'gpt-4.1',      name:'GPT-4.1',      sub:'Flagship · Last gen' },
-      { id:'gpt-4o',       name:'GPT-4o',        sub:'Multimodal · Fast' },
-      { id:'gpt-4o-mini',  name:'GPT-4o mini',   sub:'Efficient · Economico' },
-      { id:'o4-mini',      name:'o4-mini',        sub:'Fast reasoning' },
-      { id:'o3',           name:'o3',             sub:'Advanced reasoning' },
+      { id:'gpt-4.1',           name:'GPT-4.1',         sub:'Flagship · Latest · Best' },
+      { id:'gpt-4.1-mini',      name:'GPT-4.1 mini',    sub:'Efficient · Cost-effective' },
+      { id:'gpt-4.1-nano',      name:'GPT-4.1 nano',    sub:'Ultra-cheap · Tiny' },
+      { id:'gpt-4o',            name:'GPT-4o',           sub:'Multimodal · Fast' },
+      { id:'gpt-4o-mini',       name:'GPT-4o mini',      sub:'Lightweight · Budget' },
+      { id:'o4-mini',           name:'o4-mini',           sub:'Fast reasoning · Smart' },
+      { id:'o4-mini-high',      name:'o4-mini-high',      sub:'Max reasoning effort' },
+      { id:'o3',                name:'o3',                sub:'Advanced reasoning · Best' },
+      { id:'o3-mini',           name:'o3-mini',           sub:'Reasoning · Efficient' },
+      { id:'o1',                name:'o1',                sub:'Deep reasoning · Thorough' },
+      { id:'chatgpt-4o-latest', name:'ChatGPT-4o',        sub:'Latest ChatGPT model' },
     ]
   },
   anthropic: {
     name:'Anthropic', icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M13.83 3.5H10.17L2 20.5h3.93l1.62-3.7h8.9l1.62 3.7H22L13.83 3.5zM9.18 13.2 12 6.9l2.82 6.3H9.18z"/></svg>', color:'#d4714a',
     endpoint:'https://api.anthropic.com/v1/messages',
     models:[
-      { id:'claude-opus-4-6',           name:'Claude Opus 4.6',   sub:'Most powerful' },
-      { id:'claude-sonnet-4-6',         name:'Claude Sonnet 4.6', sub:'Balanced · Best value' },
-      { id:'claude-haiku-4-5-20251001', name:'Claude Haiku 4.5',  sub:'Fast & light' },
+      { id:'claude-opus-4-6',             name:'Claude Opus 4.6',    sub:'Most powerful · Flagship' },
+      { id:'claude-sonnet-4-6',           name:'Claude Sonnet 4.6',  sub:'Balanced · Best value' },
+      { id:'claude-haiku-4-5-20251001',   name:'Claude Haiku 4.5',   sub:'Fast & light · Cheap' },
+      { id:'claude-3-5-sonnet-20241022',  name:'Claude 3.5 Sonnet',  sub:'Reliable · Stable' },
+      { id:'claude-3-5-haiku-20241022',   name:'Claude 3.5 Haiku',   sub:'Very fast · Affordable' },
+      { id:'claude-3-opus-20240229',      name:'Claude 3 Opus',      sub:'Legacy · Thorough' },
     ]
   },
   groq: {
     name:'Groq', icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M13 2.05V4.08A8.01 8.01 0 0 1 20 12h-4l4.97 4.97A9.99 9.99 0 0 1 12 22a10 10 0 0 1 0-20c.34 0 .67.02 1 .05zM11 4.08A8 8 0 1 0 19.92 13H16v-2h6A10 10 0 0 0 11 4.08z"/></svg>', color:'#f97316',
     endpoint:'https://api.groq.com/openai/v1/chat/completions',
     models:[
-      { id:'llama-3.3-70b-versatile',        name:'Llama 3.3 70B',   sub:'Powerful · Meta' },
-      { id:'llama-3.1-8b-instant',           name:'Llama 3.1 8B',    sub:'Ultra fast' },
-      { id:'deepseek-r1-distill-llama-70b',  name:'DeepSeek R1',     sub:'Reasoning' },
-      { id:'gemma2-9b-it',                   name:'Gemma 2 9B',      sub:'Google · Efficient' },
-      { id:'compound-beta',                  name:'Compound Beta',   sub:'Groq native' },
+      { id:'llama-4-maverick-17b-128e-instruct', name:'Llama 4 Maverick',  sub:'Latest · Meta · Powerful' },
+      { id:'llama-4-scout-17b-16e-instruct',     name:'Llama 4 Scout',     sub:'Latest · Meta · Efficient' },
+      { id:'llama-3.3-70b-versatile',            name:'Llama 3.3 70B',     sub:'Solid · Meta' },
+      { id:'llama-3.1-8b-instant',               name:'Llama 3.1 8B',      sub:'Ultra fast · Lightweight' },
+      { id:'deepseek-r1-distill-llama-70b',      name:'DeepSeek R1',       sub:'Reasoning · Free trial' },
+      { id:'qwen-qwq-32b',                       name:'Qwen QwQ 32B',      sub:'Reasoning · Alibaba' },
+      { id:'gemma2-9b-it',                       name:'Gemma 2 9B',        sub:'Google · Efficient' },
+      { id:'compound-beta',                      name:'Compound Beta',     sub:'Groq native · Agentic' },
     ]
   },
   gemini: {
     name:'Gemini', icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M12 2.5c0 5.24-4.26 9.5-9.5 9.5 5.24 0 9.5 4.26 9.5 9.5 0-5.24 4.26-9.5 9.5-9.5-5.24 0-9.5-4.26-9.5-9.5z"/></svg>', color:'#4285f4',
     endpoint:'https://generativelanguage.googleapis.com/v1beta',
     models:[
-      { id:'gemini-2.0-flash',     name:'Gemini 2.0 Flash',  sub:'Fast & capable' },
-      { id:'gemini-2.5-pro',       name:'Gemini 2.5 Pro',    sub:'Most capable' },
-      { id:'gemini-2.5-flash',     name:'Gemini 2.5 Flash',  sub:'Efficient' },
-      { id:'gemini-1.5-pro',       name:'Gemini 1.5 Pro',    sub:'Long context · 1M tokens' },
+      { id:'gemini-2.5-pro',         name:'Gemini 2.5 Pro',         sub:'Most capable · Thinking' },
+      { id:'gemini-2.5-flash',        name:'Gemini 2.5 Flash',       sub:'Fast · Smart · Efficient' },
+      { id:'gemini-2.0-flash',        name:'Gemini 2.0 Flash',       sub:'Fast & capable' },
+      { id:'gemini-2.0-flash-lite',   name:'Gemini 2.0 Flash-Lite',  sub:'Ultra-fast · Lightweight' },
+      { id:'gemini-1.5-pro',          name:'Gemini 1.5 Pro',         sub:'Long context · 1M tokens' },
     ]
   },
   openrouter: {
     name:'OpenRouter', icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;flex-shrink:0"><path d="M16 3l4 4-4 4m4-4H8m-4 5l-4 4 4 4m-4-4h12"/></svg>', color:'#6366f1',
     endpoint:'https://openrouter.ai/api/v1/chat/completions',
     models:[
-      { id:'anthropic/claude-opus-4-6',             name:'Claude Opus 4.6',    sub:'Anthropic' },
-      { id:'openai/gpt-4.1',                        name:'GPT-4.1',            sub:'OpenAI' },
-      { id:'google/gemini-2.0-flash-001',           name:'Gemini 2.0 Flash',   sub:'Google' },
-      { id:'deepseek/deepseek-r1',                  name:'DeepSeek R1',        sub:'DeepSeek' },
-      { id:'meta-llama/llama-3.3-70b-instruct',     name:'Llama 3.3 70B',      sub:'Meta' },
-      { id:'mistralai/mistral-large',               name:'Mistral Large',       sub:'Mistral' },
+      { id:'anthropic/claude-opus-4-6',                  name:'Claude Opus 4.6',    sub:'Anthropic · Flagship' },
+      { id:'anthropic/claude-sonnet-4-6',                name:'Claude Sonnet 4.6',  sub:'Anthropic · Balanced' },
+      { id:'openai/gpt-4.1',                             name:'GPT-4.1',            sub:'OpenAI · Flagship' },
+      { id:'openai/o4-mini',                             name:'o4-mini',            sub:'OpenAI · Fast reasoning' },
+      { id:'google/gemini-2.5-pro',                      name:'Gemini 2.5 Pro',     sub:'Google · Most capable' },
+      { id:'google/gemini-2.5-flash-preview-05-20',      name:'Gemini 2.5 Flash',   sub:'Google · Fast · Smart' },
+      { id:'google/gemini-2.0-flash-001',                name:'Gemini 2.0 Flash',   sub:'Google · Fast' },
+      { id:'deepseek/deepseek-r1',                       name:'DeepSeek R1',        sub:'DeepSeek · Reasoning' },
+      { id:'meta-llama/llama-4-maverick',                name:'Llama 4 Maverick',   sub:'Meta · Latest' },
+      { id:'meta-llama/llama-4-scout',                   name:'Llama 4 Scout',      sub:'Meta · Efficient' },
+      { id:'meta-llama/llama-3.3-70b-instruct',          name:'Llama 3.3 70B',      sub:'Meta · Reliable' },
+      { id:'mistralai/mistral-large',                    name:'Mistral Large',      sub:'Mistral · European' },
+      { id:'x-ai/grok-3-mini-beta',                      name:'Grok 3 mini',        sub:'xAI · Fast reasoning' },
+      { id:'qwen/qwen-2.5-72b-instruct',                 name:'Qwen 2.5 72B',       sub:'Alibaba · Multilingual' },
     ]
   },
   mistral: {
     name:'Mistral', icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><rect x="2" y="2" width="4.5" height="4.5"/><rect x="8.75" y="2" width="4.5" height="4.5"/><rect x="15.5" y="2" width="4.5" height="4.5"/><rect x="8.75" y="8.75" width="4.5" height="4.5"/><rect x="15.5" y="8.75" width="4.5" height="4.5"/><rect x="2" y="15.5" width="4.5" height="4.5"/><rect x="8.75" y="15.5" width="4.5" height="4.5"/><rect x="15.5" y="15.5" width="4.5" height="4.5"/></svg>', color:'#ff7000',
     endpoint:'https://api.mistral.ai/v1/chat/completions',
     models:[
-      { id:'mistral-large-latest',  name:'Mistral Large',  sub:'Most capable' },
-      { id:'mistral-small-latest',  name:'Mistral Small',  sub:'Efficient' },
-      { id:'codestral-latest',      name:'Codestral',      sub:'Code specialist' },
+      { id:'mistral-large-latest',   name:'Mistral Large 2',    sub:'Most capable · 128k ctx' },
+      { id:'mistral-medium-latest',  name:'Mistral Medium 3',   sub:'Balanced · New 2025' },
+      { id:'mistral-small-latest',   name:'Mistral Small 3.2',  sub:'Efficient · Fast' },
+      { id:'codestral-latest',       name:'Codestral 2501',     sub:'Code specialist · 256k ctx' },
+      { id:'open-mistral-nemo',      name:'Mistral NeMo',       sub:'Lightweight · Apache 2.0' },
+    ]
+  },
+  xai: {
+    name:'xAI (Grok)', icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.737-8.83L1.724 2.25H8.2l4.26 5.63 5.784-5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>', color:'#ffffff',
+    endpoint:'https://api.x.ai/v1/chat/completions',
+    models:[
+      { id:'grok-3-beta',          name:'Grok 3',           sub:'Most powerful · xAI' },
+      { id:'grok-3-mini-beta',     name:'Grok 3 mini',      sub:'Fast reasoning · Efficient' },
+      { id:'grok-2-1212',          name:'Grok 2',           sub:'Stable · Balanced' },
+      { id:'grok-2-vision-1212',   name:'Grok 2 Vision',    sub:'Multimodal · Image input' },
+    ]
+  },
+  deepseek: {
+    name:'DeepSeek', icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M21.5 9.5c-.4-1.6-1.2-3-2.4-4.1-.4-.4-.9-.3-1.2.1-.3.4-.2.9.1 1.2.9.8 1.5 1.9 1.8 3.1.1.5.6.8 1.1.7.5-.1.8-.6.6-1zM18 4c-.4-.3-.9-.3-1.2.1l-.1.1c-1.4-1.4-3.4-2.2-5.7-2.2C5.7 2 2 5.7 2 11c0 1.6.5 3.1 1.3 4.4l-1 3.3c-.1.5.2.9.7.9.1 0 .3 0 .4-.1l3.3-1.2c1.2.7 2.7 1.1 4.3 1.1 5.3 0 9-3.7 9-9 0-2.3-.8-4.4-2-6zm-7 12.5c-1.3 0-2.5-.3-3.5-.9-.2-.1-.5-.2-.7-.1l-2.1.8.7-2.2c.1-.2 0-.5-.1-.7C4.5 12.5 4 11.8 4 11c0-3.7 3.1-7 7-7 3.9 0 7 3.1 7 7 0 3.9-3.1 7.5-7 7.5z"/></svg>', color:'#4299e1',
+    endpoint:'https://api.deepseek.com/v1/chat/completions',
+    models:[
+      { id:'deepseek-chat',      name:'DeepSeek V3',      sub:'Most capable · Free trial' },
+      { id:'deepseek-reasoner',  name:'DeepSeek R1',      sub:'Advanced reasoning' },
+    ]
+  },
+  together: {
+    name:'Together AI', icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="5" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M7.4 11.1 16.6 6m0 12L7.4 12.9"/></svg>', color:'#a855f7',
+    endpoint:'https://api.together.xyz/v1/chat/completions',
+    models:[
+      { id:'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8', name:'Llama 4 Maverick',     sub:'Latest · Meta · Best' },
+      { id:'meta-llama/Llama-4-Scout-17B-16E-Instruct',          name:'Llama 4 Scout',        sub:'Latest · Meta · Efficient' },
+      { id:'meta-llama/Llama-3.3-70B-Instruct-Turbo',            name:'Llama 3.3 70B Turbo',  sub:'Fast · Meta' },
+      { id:'deepseek-ai/DeepSeek-R1',                             name:'DeepSeek R1',          sub:'Reasoning' },
+      { id:'Qwen/Qwen2.5-72B-Instruct-Turbo',                    name:'Qwen 2.5 72B',         sub:'Alibaba' },
+      { id:'mistralai/Mixtral-8x22B-Instruct-v0.1',              name:'Mixtral 8x22B',        sub:'Mistral' },
+    ]
+  },
+  cohere: {
+    name:'Cohere', icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 3a7 7 0 1 1 0 14A7 7 0 0 1 12 5zm0 2.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zm0 2a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z"/></svg>', color:'#39d353',
+    endpoint:'https://api.cohere.ai/compatibility/v1/chat/completions',
+    models:[
+      { id:'command-a-03-2025',      name:'Command A',    sub:'Latest · Most capable' },
+      { id:'command-r-plus',         name:'Command R+',   sub:'Powerful · RAG' },
+      { id:'command-r',              name:'Command R',    sub:'Balanced · Efficient' },
+      { id:'command-r7b-12-2024',    name:'Command R7B',  sub:'Lightweight · Fast' },
+    ]
+  },
+  cerebras: {
+    name:'Cerebras', icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-0.15em;flex-shrink:0"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><line x1="3" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="21" y2="12"/><line x1="12" y1="3" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="21"/></svg>', color:'#f43f5e',
+    endpoint:'https://api.cerebras.ai/v1/chat/completions',
+    models:[
+      { id:'llama-4-scout-17b-16e-instruct', name:'Llama 4 Scout',  sub:'World fastest · 2000 t/s' },
+      { id:'llama-3.3-70b',                  name:'Llama 3.3 70B',  sub:'Blazing fast · 1000 t/s' },
+      { id:'llama3.1-8b',                    name:'Llama 3.1 8B',   sub:'Ultra fast · Tiny' },
+      { id:'qwen-3-32b',                     name:'Qwen 3 32B',     sub:'Fast · Smart · 32B' },
+    ]
+  },
+  perplexity: {
+    name:'Perplexity', icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:-0.15em;flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>', color:'#20b2aa',
+    endpoint:'https://api.perplexity.ai/chat/completions',
+    models:[
+      { id:'sonar-pro',             name:'Sonar Pro',           sub:'Best quality · Web search' },
+      { id:'sonar',                 name:'Sonar',               sub:'Fast · Web search' },
+      { id:'sonar-reasoning-pro',   name:'Sonar Reasoning Pro', sub:'Deep reasoning + search' },
+      { id:'sonar-reasoning',       name:'Sonar Reasoning',     sub:'Reasoning + search' },
+      { id:'r1-1776',               name:'R1-1776',             sub:'Offline · No search' },
+    ]
+  },
+  fireworks: {
+    name:'Fireworks', icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17 5.8 21.3l2.4-7.4L2 9.4h7.6z"/></svg>', color:'#a855f7',
+    endpoint:'https://api.fireworks.ai/inference/v1/chat/completions',
+    models:[
+      { id:'accounts/fireworks/models/llama4-maverick-instruct-basic',  name:'Llama 4 Maverick', sub:'Meta · Latest · Fast' },
+      { id:'accounts/fireworks/models/llama4-scout-instruct-basic',     name:'Llama 4 Scout',    sub:'Meta · Latest · Efficient' },
+      { id:'accounts/fireworks/models/llama-v3p3-70b-instruct',        name:'Llama 3.3 70B',    sub:'Meta · Reliable' },
+      { id:'accounts/fireworks/models/deepseek-r1',                    name:'DeepSeek R1',      sub:'Reasoning · 671B' },
+      { id:'accounts/fireworks/models/qwen3-235b-a22b',               name:'Qwen 3 235B',      sub:'MoE · Alibaba · Huge' },
+      { id:'accounts/fireworks/models/qwen3-30b-a3b',                 name:'Qwen 3 30B MoE',   sub:'Efficient · Smart' },
+      { id:'accounts/fireworks/models/mixtral-8x22b-instruct-hf',     name:'Mixtral 8x22B',    sub:'Mistral · Open' },
+      { id:'accounts/fireworks/models/phi-4-multimodal-instruct',     name:'Phi-4 Multimodal', sub:'Microsoft · Vision' },
+    ]
+  },
+  novita: {
+    name:'Novita AI', icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M12 2 L22 8 V16 L12 22 L2 16 V8 Z" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>', color:'#0ea5e9',
+    endpoint:'https://router.novita.ai/openai/v1/chat/completions',
+    models:[
+      { id:'meta-llama/llama-4-maverick',          name:'Llama 4 Maverick',   sub:'Meta · Latest · Cheap' },
+      { id:'meta-llama/llama-4-scout',             name:'Llama 4 Scout',      sub:'Meta · Latest · Fast' },
+      { id:'deepseek/deepseek-r1',                 name:'DeepSeek R1',        sub:'Reasoning · Cheap' },
+      { id:'deepseek/deepseek-v3-0324',            name:'DeepSeek V3',        sub:'Flagship · Cheap' },
+      { id:'qwen/qwen3-235b-a22b',                 name:'Qwen 3 235B',        sub:'MoE · Massive' },
+      { id:'qwen/qwen3-32b',                       name:'Qwen 3 32B',         sub:'Dense · Smart' },
+      { id:'google/gemma-3-27b-it',                name:'Gemma 3 27B',        sub:'Google · Open' },
+      { id:'microsoft/phi-4-multimodal-instruct',  name:'Phi-4 Multimodal',   sub:'Microsoft · Vision' },
+    ]
+  },
+  sambanova: {
+    name:'SambaNova', icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>', color:'#ef4444',
+    endpoint:'https://api.sambanova.ai/v1/chat/completions',
+    models:[
+      { id:'Meta-Llama-4-Maverick-17B-128E-Instruct',  name:'Llama 4 Maverick',  sub:'Fast · Meta · Latest' },
+      { id:'Meta-Llama-4-Scout-17B-16E-Instruct',      name:'Llama 4 Scout',     sub:'Efficient · Meta' },
+      { id:'Meta-Llama-3.3-70B-Instruct',              name:'Llama 3.3 70B',     sub:'Meta · Reliable' },
+      { id:'DeepSeek-R1',                              name:'DeepSeek R1',       sub:'Full · 671B reasoning' },
+      { id:'Qwen3-32B',                                name:'Qwen 3 32B',        sub:'Alibaba · Smart' },
+      { id:'Qwen2.5-72B-Instruct',                     name:'Qwen 2.5 72B',      sub:'Alibaba · Solid' },
+    ]
+  },
+  pollinations: {
+    name:'Pollinations', icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><circle cx="12" cy="12" r="2"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4m-3.17-7.07-2.83 2.83M7 17l-2.83 2.83M4.93 4.93 7.76 7.76M17 17l2.83 2.83" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>', color:'#d4714a',
+    endpoint:'https://text.pollinations.ai/openai',
+    models:[
+      { id:'openai',          name:'GPT-5.4 Nano',         sub:'Free · Fast & balanced' },
+      { id:'openai-large',    name:'GPT-5.4',               sub:'Free · Most powerful · Reasoning' },
+      { id:'openai-fast',     name:'GPT-5 Nano',            sub:'Free · Ultra fast' },
+      { id:'qwen-coder',      name:'Qwen3 Coder 30B',       sub:'Free · Code expert' },
+      { id:'mistral',         name:'Mistral Small 3.2',     sub:'Free · Efficient' },
+      { id:'gemini-fast',     name:'Gemini 2.5 Flash Lite', sub:'Free · Google · Search+Code' },
+      { id:'grok',            name:'Grok 4.20',             sub:'Free · xAI · Multimodal' },
+      { id:'llama',           name:'Llama 3.3 70B',         sub:'Free · Meta' },
+      { id:'llama-4-scout',   name:'Llama 4 Scout',         sub:'Free · Meta · Vision' },
+      { id:'sonar',           name:'Perplexity Sonar',      sub:'Free · Web search' },
+      { id:'mistral-large',   name:'Mistral Large 3',       sub:'Free · Powerful · Reasoning' },
+      { id:'claude-haiku',    name:'Claude Haiku 4.5',      sub:'Free · Anthropic · Fast' },
+      { id:'minimax',         name:'MiniMax M2.7',          sub:'Free · Reasoning' },
+      { id:'nova',            name:'Nova Micro',            sub:'Free · Amazon · Tiny & fast' },
     ]
   }
 };
@@ -2917,12 +3126,42 @@ let selectedLocalModelId = ls('selectedLocalModelId', 'Qwen2.5-0.5B-Instruct-q4f
 
 /* ── Available Pollinations cloud models ── */
 const CLOUD_MODEL_OPTIONS = [
-  { id:'openai',            name:'GPT-4o',           sub:'OpenAI · Best all-rounder',       icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M22.28 9.82a5.98 5.98 0 0 0-.52-4.91 6.05 6.05 0 0 0-6.51-2.9 6.06 6.06 0 0 0-10.27 2.17 5.98 5.98 0 0 0-3.98 2.9 6.05 6.05 0 0 0 .74 7.1 5.98 5.98 0 0 0 .51 4.91 6.05 6.05 0 0 0 6.51 2.9A5.98 5.98 0 0 0 13.26 24a6.06 6.06 0 0 0 5.77-4.21 5.99 5.99 0 0 0 3.98-2.9 6.06 6.06 0 0 0-.73-7.07zM13.26 22.43a4.48 4.48 0 0 1-2.88-1.04l.14-.08 4.78-2.76a.79.79 0 0 0 .4-.68v-6.74l2.02 1.17a.07.07 0 0 1 .04.05v5.58a4.5 4.5 0 0 1-4.5 4.5zM3.6 18.31a4.47 4.47 0 0 1-.53-3.01l.14.08 4.78 2.76a.77.77 0 0 0 .78 0l5.84-3.37v2.33a.08.08 0 0 1-.03.06L9.74 19.95a4.5 4.5 0 0 1-6.14-1.64zM2.34 7.9a4.48 4.48 0 0 1 2.36-1.98V11.6a.77.77 0 0 0 .39.68l5.81 3.35-2.02 1.17a.08.08 0 0 1-.07 0L4.2 14.72A4.5 4.5 0 0 1 2.34 7.9zM18.94 11.76l-5.83-3.36 2.02-1.16a.08.08 0 0 1 .07 0l4.68 2.69a4.5 4.5 0 0 1-.68 8.1v-5.6a.79.79 0 0 0-.26-.67zM20.95 8.74l-.14-.09-4.77-2.78a.78.78 0 0 0-.79 0L9.41 9.23V6.9a.07.07 0 0 1 .03-.06l4.83-2.79a4.5 4.5 0 0 1 6.68 4.66zM8.31 12.86l-2.02-1.16a.08.08 0 0 1-.04-.06V6.07a4.5 4.5 0 0 1 7.38-3.45l-.14.08-4.78 2.76a.79.79 0 0 0-.4.68v6.72zm1.1-2.37 2.6-1.5 2.61 1.5v3l-2.6 1.5-2.61-1.5v-3z"/></svg>', color:'#10a37f' },
-  { id:'openai-large',      name:'GPT-4.1',           sub:'OpenAI · Flagship',               icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M22.28 9.82a5.98 5.98 0 0 0-.52-4.91 6.05 6.05 0 0 0-6.51-2.9 6.06 6.06 0 0 0-10.27 2.17 5.98 5.98 0 0 0-3.98 2.9 6.05 6.05 0 0 0 .74 7.1 5.98 5.98 0 0 0 .51 4.91 6.05 6.05 0 0 0 6.51 2.9A5.98 5.98 0 0 0 13.26 24a6.06 6.06 0 0 0 5.77-4.21 5.99 5.99 0 0 0 3.98-2.9 6.06 6.06 0 0 0-.73-7.07zM13.26 22.43a4.48 4.48 0 0 1-2.88-1.04l.14-.08 4.78-2.76a.79.79 0 0 0 .4-.68v-6.74l2.02 1.17a.07.07 0 0 1 .04.05v5.58a4.5 4.5 0 0 1-4.5 4.5zM3.6 18.31a4.47 4.47 0 0 1-.53-3.01l.14.08 4.78 2.76a.77.77 0 0 0 .78 0l5.84-3.37v2.33a.08.08 0 0 1-.03.06L9.74 19.95a4.5 4.5 0 0 1-6.14-1.64zM2.34 7.9a4.48 4.48 0 0 1 2.36-1.98V11.6a.77.77 0 0 0 .39.68l5.81 3.35-2.02 1.17a.08.08 0 0 1-.07 0L4.2 14.72A4.5 4.5 0 0 1 2.34 7.9zM18.94 11.76l-5.83-3.36 2.02-1.16a.08.08 0 0 1 .07 0l4.68 2.69a4.5 4.5 0 0 1-.68 8.1v-5.6a.79.79 0 0 0-.26-.67zM20.95 8.74l-.14-.09-4.77-2.78a.78.78 0 0 0-.79 0L9.41 9.23V6.9a.07.07 0 0 1 .03-.06l4.83-2.79a4.5 4.5 0 0 1 6.68 4.66zM8.31 12.86l-2.02-1.16a.08.08 0 0 1-.04-.06V6.07a4.5 4.5 0 0 1 7.38-3.45l-.14.08-4.78 2.76a.79.79 0 0 0-.4.68v6.72zm1.1-2.37 2.6-1.5 2.61 1.5v3l-2.6 1.5-2.61-1.5v-3z"/></svg>', color:'#10a37f' },
-  { id:'openai-fast',       name:'GPT-4o mini',       sub:'OpenAI · Fastest',                icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M22.28 9.82a5.98 5.98 0 0 0-.52-4.91 6.05 6.05 0 0 0-6.51-2.9 6.06 6.06 0 0 0-10.27 2.17 5.98 5.98 0 0 0-3.98 2.9 6.05 6.05 0 0 0 .74 7.1 5.98 5.98 0 0 0 .51 4.91 6.05 6.05 0 0 0 6.51 2.9A5.98 5.98 0 0 0 13.26 24a6.06 6.06 0 0 0 5.77-4.21 5.99 5.99 0 0 0 3.98-2.9 6.06 6.06 0 0 0-.73-7.07zM13.26 22.43a4.48 4.48 0 0 1-2.88-1.04l.14-.08 4.78-2.76a.79.79 0 0 0 .4-.68v-6.74l2.02 1.17a.07.07 0 0 1 .04.05v5.58a4.5 4.5 0 0 1-4.5 4.5zM3.6 18.31a4.47 4.47 0 0 1-.53-3.01l.14.08 4.78 2.76a.77.77 0 0 0 .78 0l5.84-3.37v2.33a.08.08 0 0 1-.03.06L9.74 19.95a4.5 4.5 0 0 1-6.14-1.64zM2.34 7.9a4.48 4.48 0 0 1 2.36-1.98V11.6a.77.77 0 0 0 .39.68l5.81 3.35-2.02 1.17a.08.08 0 0 1-.07 0L4.2 14.72A4.5 4.5 0 0 1 2.34 7.9zM18.94 11.76l-5.83-3.36 2.02-1.16a.08.08 0 0 1 .07 0l4.68 2.69a4.5 4.5 0 0 1-.68 8.1v-5.6a.79.79 0 0 0-.26-.67zM20.95 8.74l-.14-.09-4.77-2.78a.78.78 0 0 0-.79 0L9.41 9.23V6.9a.07.07 0 0 1 .03-.06l4.83-2.79a4.5 4.5 0 0 1 6.68 4.66zM8.31 12.86l-2.02-1.16a.08.08 0 0 1-.04-.06V6.07a4.5 4.5 0 0 1 7.38-3.45l-.14.08-4.78 2.76a.79.79 0 0 0-.4.68v6.72zm1.1-2.37 2.6-1.5 2.61 1.5v3l-2.6 1.5-2.61-1.5v-3z"/></svg>', color:'#10a37f' },
-  { id:'deepseek-reasoner', name:'DeepSeek R1',       sub:'Reasoning · Step-by-step',        icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M21.928 13.17c-.166-.37-.477-.64-.857-.74L18.5 11.7l.35-2.04a1.16 1.16 0 0 0-.47-1.12L15.9 6.76a1.16 1.16 0 0 0-1.22-.07L12 8.06 9.32 6.69a1.16 1.16 0 0 0-1.22.07L5.62 8.54a1.16 1.16 0 0 0-.47 1.12l.35 2.04-2.57.73a1.16 1.16 0 0 0-.76 1.51l.91 2.52a1.16 1.16 0 0 0 1.4.72l1.05-.33.42 2.24a1.16 1.16 0 0 0 1.14.95h5.91 5.91a1.16 1.16 0 0 0 1.14-.95l.42-2.24 1.05.33a1.16 1.16 0 0 0 1.4-.72l.91-2.52a1.16 1.16 0 0 0-.1-.77zM12 15.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0-1.75a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5z"/></svg>', color:'#4299e1' },
-  { id:'qwen-coder',        name:'Qwen Coder 32B',    sub:'Code expert · Alibaba',           icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.5 14.5h-9L12 7l4.5 9.5zM10.5 14h3l-1.5-3.5L10.5 14z"/></svg>', color:'#6366f1' },
-  { id:'mistral',           name:'Mistral Large',      sub:'Mistral · Fast & efficient',      icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><rect x="2" y="2" width="4.5" height="4.5"/><rect x="8.75" y="2" width="4.5" height="4.5"/><rect x="15.5" y="2" width="4.5" height="4.5"/><rect x="8.75" y="8.75" width="4.5" height="4.5"/><rect x="15.5" y="8.75" width="4.5" height="4.5"/><rect x="2" y="15.5" width="4.5" height="4.5"/><rect x="8.75" y="15.5" width="4.5" height="4.5"/><rect x="15.5" y="15.5" width="4.5" height="4.5"/></svg>', color:'#ff7000' },
+  { id:'openai',
+    name:'GPT-5.4 Nano',     sub:'OpenAI · Fast & free',
+    icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M22.28 9.82a5.98 5.98 0 0 0-.52-4.91 6.05 6.05 0 0 0-6.51-2.9 6.06 6.06 0 0 0-10.27 2.17 5.98 5.98 0 0 0-3.98 2.9 6.05 6.05 0 0 0 .74 7.1 5.98 5.98 0 0 0 .51 4.91 6.05 6.05 0 0 0 6.51 2.9A5.98 5.98 0 0 0 13.26 24a6.06 6.06 0 0 0 5.77-4.21 5.99 5.99 0 0 0 3.98-2.9 6.06 6.06 0 0 0-.73-7.07zM13.26 22.43a4.48 4.48 0 0 1-2.88-1.04l.14-.08 4.78-2.76a.79.79 0 0 0 .4-.68v-6.74l2.02 1.17a.07.07 0 0 1 .04.05v5.58a4.5 4.5 0 0 1-4.5 4.5zM3.6 18.31a4.47 4.47 0 0 1-.53-3.01l.14.08 4.78 2.76a.77.77 0 0 0 .78 0l5.84-3.37v2.33a.08.08 0 0 1-.03.06L9.74 19.95a4.5 4.5 0 0 1-6.14-1.64zM2.34 7.9a4.48 4.48 0 0 1 2.36-1.98V11.6a.77.77 0 0 0 .39.68l5.81 3.35-2.02 1.17a.08.08 0 0 1-.07 0L4.2 14.72A4.5 4.5 0 0 1 2.34 7.9zM18.94 11.76l-5.83-3.36 2.02-1.16a.08.08 0 0 1 .07 0l4.68 2.69a4.5 4.5 0 0 1-.68 8.1v-5.6a.79.79 0 0 0-.26-.67zM20.95 8.74l-.14-.09-4.77-2.78a.78.78 0 0 0-.79 0L9.41 9.23V6.9a.07.07 0 0 1 .03-.06l4.83-2.79a4.5 4.5 0 0 1 6.68 4.66zM8.31 12.86l-2.02-1.16a.08.08 0 0 1-.04-.06V6.07a4.5 4.5 0 0 1 7.38-3.45l-.14.08-4.78 2.76a.79.79 0 0 0-.4.68v6.72zm1.1-2.37 2.6-1.5 2.61 1.5v3l-2.6 1.5-2.61-1.5v-3z"/></svg>',
+    color:'#10a37f' },
+  { id:'llama',
+    name:'Llama 4 Scout',    sub:'Meta · 17B · Multimodal · Fast',
+    icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M2 12C2 6.48 6.48 2 12 2c2.12 0 4.08.66 5.7 1.78L5.78 17.7A9.94 9.94 0 0 1 2 12zm3.78 7.7L17.7 7.78A9.96 9.96 0 0 1 22 12c0 5.52-4.48 10-10 10a9.94 9.94 0 0 1-6.22-2.3z"/></svg>',
+    color:'#0064e0' },
+  { id:'gemini',
+    name:'Gemini 2.5 Flash Lite', sub:'Google · Fast · Search',
+    icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M12 2.5c0 5.24-4.26 9.5-9.5 9.5 5.24 0 9.5 4.26 9.5 9.5 0-5.24 4.26-9.5 9.5-9.5-5.24 0-9.5-4.26-9.5-9.5z"/></svg>',
+    color:'#4285f4' },
+  { id:'mistral',
+    name:'Mistral Small 3.1', sub:'Mistral · Multimodal · Efficient',
+    icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><rect x="2" y="2" width="4.5" height="4.5"/><rect x="8.75" y="2" width="4.5" height="4.5"/><rect x="15.5" y="2" width="4.5" height="4.5"/><rect x="8.75" y="8.75" width="4.5" height="4.5"/><rect x="15.5" y="8.75" width="4.5" height="4.5"/><rect x="2" y="15.5" width="4.5" height="4.5"/><rect x="8.75" y="15.5" width="4.5" height="4.5"/><rect x="15.5" y="15.5" width="4.5" height="4.5"/></svg>',
+    color:'#ff7000' },
+  { id:'qwen-coder',
+    name:'Qwen3 Coder 30B', sub:'Alibaba · Code expert',
+    icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>',
+    color:'#6366f1' },
+  { id:'qwen',
+    name:'Qwen3 VL 30B',   sub:'Alibaba · Vision + Reasoning',
+    icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.5l-4-7h2.18l1.82 3.18 1.82-3.18H17l-4 7zm-1-9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>',
+    color:'#6366f1' },
+  { id:'searchgpt',
+    name:'Perplexity Sonar', sub:'Web search · Live data',
+    icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-0.15em;flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+    color:'#20b2aa' },
+  { id:'mistral-large',
+    name:'Mistral Large 3', sub:'Mistral · Reasoning · Vision',
+    icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><rect x="2" y="2" width="4.5" height="4.5"/><rect x="8.75" y="2" width="4.5" height="4.5"/><rect x="15.5" y="2" width="4.5" height="4.5"/><rect x="8.75" y="8.75" width="4.5" height="4.5"/><rect x="15.5" y="8.75" width="4.5" height="4.5"/><rect x="2" y="15.5" width="4.5" height="4.5"/><rect x="8.75" y="15.5" width="4.5" height="4.5"/><rect x="15.5" y="15.5" width="4.5" height="4.5"/></svg>',
+    color:'#ff7000' },
+  { id:'nova',
+    name:'Nova Micro',      sub:'Amazon · Ultra-fast · Cheap',
+    icon:'<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.15em;flex-shrink:0"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+    color:'#ff9900' },
 ];
 
 /* ── Google OAuth Client ID for public deployment ──
@@ -2936,15 +3175,38 @@ const LOCAL_MODEL_ICONS = {
   qwen:   `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.5l-4-7h2.18l1.82 3.18 1.82-3.18H17l-4 7zm-1-9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>`,
   llama:  `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M2 12C2 6.48 6.48 2 12 2c2.12 0 4.08.66 5.7 1.78L5.78 17.7A9.94 9.94 0 0 1 2 12zm3.78 7.7L17.7 7.78A9.96 9.96 0 0 1 22 12c0 5.52-4.48 10-10 10a9.94 9.94 0 0 1-6.22-2.3z"/></svg>`,
   smollm: `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><circle cx="12" cy="10" r="7"/><path d="M9 9.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-6.5 3c.83 1.5 5.17 1.5 6 0" stroke="white" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M5 17c0 3.31 3.13 5 7 5s7-1.69 7-5"/></svg>`,
+  phi:    `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="9"/><line x1="12" y1="3" x2="12" y2="21"/><path d="M7 7.5c0 2.5 2 4 5 4s5-1.5 5-4"/><path d="M7 16.5c0-2.5 2-4 5-4s5 1.5 5 4"/></svg>`,
+  gemma:  `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M12 2.5c0 5.24-4.26 9.5-9.5 9.5 5.24 0 9.5 4.26 9.5 9.5 0-5.24 4.26-9.5 9.5-9.5-5.24 0-9.5-4.26-9.5-9.5z"/></svg>`,
+  mistral:`<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><rect x="2" y="2" width="4" height="4"/><rect x="8" y="2" width="4" height="4"/><rect x="14" y="2" width="4" height="4"/><rect x="8" y="8" width="4" height="4"/><rect x="14" y="8" width="4" height="4"/><rect x="2" y="14" width="4" height="4"/><rect x="8" y="14" width="4" height="4"/><rect x="14" y="14" width="4" height="4"/></svg>`,
+  deepseek:`<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M12 3C7.03 3 3 7.03 3 12s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 2c3.86 0 7 3.14 7 7 0 3.86-3.14 7-7 7-3.86 0-7-3.14-7-7 0-3.86 3.14-7 7-7zm0 2a5 5 0 1 0 0 10A5 5 0 0 0 12 7zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>`,
 };
 
 /* ── Available WebLLM local models ── */
 const WEBLLM_AVAILABLE = [
-  { id:'Qwen2.5-0.5B-Instruct-q4f16_1-MLC',   name:'Qwen 0.5B',  sub:'Fastest · ~600MB',  size:'~600MB',  brand:'qwen',   color:'#6366f1' },
-  { id:'Qwen2.5-1.5B-Instruct-q4f16_1-MLC',   name:'Qwen 1.5B',  sub:'Balanced · ~1.2GB', size:'~1.2GB',  brand:'qwen',   color:'#6366f1' },
-  { id:'Llama-3.2-1B-Instruct-q4f16_1-MLC',   name:'Llama 1B',   sub:'Meta · ~700MB',     size:'~700MB',  brand:'llama',  color:'#0668E1' },
-  { id:'Llama-3.2-3B-Instruct-q4f16_1-MLC',   name:'Llama 3B',   sub:'Capable · ~2GB',    size:'~2GB',    brand:'llama',  color:'#0668E1' },
-  { id:'SmolLM2-1.7B-Instruct-q4f16_1-MLC',   name:'SmolLM 1.7B',sub:'HuggingFace · ~1GB',size:'~1GB',    brand:'smollm', color:'#FFD21E' },
+  // ── Qwen 2.5 ──
+  { id:'Qwen2.5-0.5B-Instruct-q4f16_1-MLC',          name:'Qwen 0.5B',         sub:'Ultra-fast · ~600MB',      size:'~600MB',  brand:'qwen',     color:'#6366f1' },
+  { id:'Qwen2.5-1.5B-Instruct-q4f16_1-MLC',          name:'Qwen 1.5B',         sub:'Fast · ~1.2GB',            size:'~1.2GB',  brand:'qwen',     color:'#6366f1' },
+  { id:'Qwen2.5-3B-Instruct-q4f16_1-MLC',            name:'Qwen 3B',           sub:'Balanced · ~2GB',          size:'~2GB',    brand:'qwen',     color:'#6366f1' },
+  { id:'Qwen2.5-7B-Instruct-q4f16_1-MLC',            name:'Qwen 7B',           sub:'Powerful · ~5GB',          size:'~5GB',    brand:'qwen',     color:'#6366f1' },
+  { id:'Qwen2.5-Coder-1.5B-Instruct-q4f16_1-MLC',    name:'Qwen Coder 1.5B',  sub:'Code · ~1.2GB',            size:'~1.2GB',  brand:'qwen',     color:'#a78bfa' },
+  { id:'Qwen2.5-Coder-7B-Instruct-q4f16_1-MLC',      name:'Qwen Coder 7B',    sub:'Code · ~5GB',              size:'~5GB',    brand:'qwen',     color:'#a78bfa' },
+  // ── Llama ──
+  { id:'Llama-3.2-1B-Instruct-q4f16_1-MLC',          name:'Llama 1B',          sub:'Meta · ~700MB',            size:'~700MB',  brand:'llama',    color:'#0668E1' },
+  { id:'Llama-3.2-3B-Instruct-q4f16_1-MLC',          name:'Llama 3B',          sub:'Meta · ~2GB',              size:'~2GB',    brand:'llama',    color:'#0668E1' },
+  { id:'Llama-3.1-8B-Instruct-q4f32_1-MLC',          name:'Llama 8B',          sub:'Meta · Capable · ~6GB',    size:'~6GB',    brand:'llama',    color:'#0668E1' },
+  // ── SmolLM2 ──
+  { id:'SmolLM2-360M-Instruct-q4f16_1-MLC',          name:'SmolLM 360M',       sub:'Tiniest · ~350MB',         size:'~350MB',  brand:'smollm',   color:'#FFD21E' },
+  { id:'SmolLM2-1.7B-Instruct-q4f16_1-MLC',          name:'SmolLM 1.7B',       sub:'HuggingFace · ~1GB',       size:'~1GB',    brand:'smollm',   color:'#FFD21E' },
+  // ── Phi (Microsoft) ──
+  { id:'Phi-3.5-mini-instruct-q4f16_1-MLC',          name:'Phi-3.5 Mini',      sub:'Microsoft · ~3.5GB',       size:'~3.5GB',  brand:'phi',      color:'#0078d4' },
+  { id:'Phi-4-mini-instruct-q4f16_1-MLC',            name:'Phi-4 Mini',        sub:'Microsoft · Latest · ~4GB',size:'~4GB',    brand:'phi',      color:'#0078d4' },
+  // ── Gemma (Google) ──
+  { id:'gemma-2-2b-it-q4f16_1-MLC',                  name:'Gemma 2 2B',        sub:'Google · ~2GB',            size:'~2GB',    brand:'gemma',    color:'#4285f4' },
+  // ── Mistral ──
+  { id:'Mistral-7B-Instruct-v0.3-q4f16_1-MLC',       name:'Mistral 7B',        sub:'Mistral · ~5GB',           size:'~5GB',    brand:'mistral',  color:'#ff7000' },
+  // ── DeepSeek R1 Distilled ──
+  { id:'DeepSeek-R1-Distill-Qwen-1.5B-q4f16_1-MLC',  name:'DeepSeek R1 1.5B',  sub:'Reasoning · ~1.2GB',       size:'~1.2GB',  brand:'deepseek', color:'#4299e1' },
+  { id:'DeepSeek-R1-Distill-Llama-8B-q4f16_1-MLC',   name:'DeepSeek R1 8B',    sub:'Reasoning · ~6GB',         size:'~6GB',    brand:'deepseek', color:'#4299e1' },
 ];
 
 (function init() {
@@ -3012,7 +3274,7 @@ function renderModelSheet() {
   const container = document.getElementById('modelSheetOptions');
   if (!container) return;
 
-  // ── Custom API Key mode: show provider's models ──
+  // ── Custom API Key mode: show provider's models + option to remove key ──
   if (customApiKey && customApiKey.key) {
     const prov = PROVIDER_MODELS[customApiKey.provider];
     if (banner) {
@@ -3053,7 +3315,13 @@ function renderModelSheet() {
           </div>
           <div class="sheet-check" style="opacity:${isSelected?1:0}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
         </div>`;
-      }).join('');
+      }).join('') +
+      `<div style="padding:10px 16px 14px;border-top:1px solid var(--border);margin-top:6px">
+        <button onclick="removeApiKeyAndSwitchFree()" style="width:100%;padding:12px;border-radius:14px;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.15s">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.18"/></svg>
+          Remove API Key · Use Pollinations (Free)
+        </button>
+      </div>`;
     return;
   }
 
@@ -3063,9 +3331,7 @@ function renderModelSheet() {
   // ── Helix Personas ──
   const personaHtml = Object.entries(MODELS).map(([name, m]) => {
     const isSelected = name === currentModel;
-    const ver  = m.version;
-    const sub  = m.sub;
-    const displayName = `${name} v${ver}`;
+    const displayName = `${name} v${m.version}`;
     return `<div class="sheet-option" id="opt-${name}" onclick="selectModel('${name}', this)">
       <div class="sheet-option-left">
         <div class="sheet-model-swatch" style="background:${m.swatchBg};color:${m.swatchColor};${isSelected?'outline:2px solid '+m.swatchColor+';':''}">${m.icon}</div>
@@ -3073,7 +3339,7 @@ function renderModelSheet() {
           <div class="sheet-option-name-wrap">
             <span class="sheet-option-name" style="color:${m.nameColor}">${displayName}</span>
           </div>
-          <div class="sheet-option-sub">${sub}</div>
+          <div class="sheet-option-sub">${m.sub}</div>
         </div>
       </div>
       <div class="sheet-check" style="opacity:${isSelected?1:0}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
@@ -3130,14 +3396,28 @@ function renderModelSheet() {
     </div>`;
   }).join('');
 
-  container.innerHTML =
-    `<div style="padding:8px 16px 4px;font-family:var(--font-sans);font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase">Helix Personas</div>` +
-    personaHtml +
-    `<div style="padding:10px 16px 4px;font-family:var(--font-sans);font-size:10px;font-weight:700;color:#4ade80;letter-spacing:0.1em;text-transform:uppercase;border-top:1px solid var(--border);margin-top:6px">☁️ Cloud Models · Pollinations (free)</div>` +
-    cloudAutoHtml + cloudHtml +
-    `<div style="padding:10px 16px 4px;font-family:var(--font-sans);font-size:10px;font-weight:700;color:#a78bfa;letter-spacing:0.1em;text-transform:uppercase;border-top:1px solid var(--border);margin-top:6px">🖥 Local · On-device (WebGPU)</div>` +
-    localHtml +
-    `<div style="padding:8px 16px 12px;font-family:var(--font-sans);font-size:11px;color:var(--text3);line-height:1.5">Downloads once, cached in your browser forever. Requires WebGPU.</div>`;
+  // ── Filter based on pollinationsMode ──
+  if (pollinationsMode === 'local') {
+    container.innerHTML =
+      `<div style="padding:8px 16px 4px;font-family:var(--font-sans);font-size:10px;font-weight:700;color:#a78bfa;letter-spacing:0.1em;text-transform:uppercase">🖥 Local · On-device (WebGPU)</div>` +
+      localHtml +
+      `<div style="padding:8px 16px 12px;font-family:var(--font-sans);font-size:11px;color:var(--text3);line-height:1.5">Downloads once, cached in your browser forever. Requires WebGPU.</div>`;
+  } else if (pollinationsMode === 'cloud') {
+    container.innerHTML =
+      `<div style="padding:8px 16px 4px;font-family:var(--font-sans);font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase">Helix Personas</div>` +
+      personaHtml +
+      `<div style="padding:10px 16px 4px;font-family:var(--font-sans);font-size:10px;font-weight:700;color:#4ade80;letter-spacing:0.1em;text-transform:uppercase;border-top:1px solid var(--border);margin-top:6px">☁️ Cloud Models · Pollinations (free)</div>` +
+      cloudAutoHtml + cloudHtml;
+  } else {
+    container.innerHTML =
+      `<div style="padding:8px 16px 4px;font-family:var(--font-sans);font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase">Helix Personas</div>` +
+      personaHtml +
+      `<div style="padding:10px 16px 4px;font-family:var(--font-sans);font-size:10px;font-weight:700;color:#4ade80;letter-spacing:0.1em;text-transform:uppercase;border-top:1px solid var(--border);margin-top:6px">☁️ Cloud Models · Pollinations (free)</div>` +
+      cloudAutoHtml + cloudHtml +
+      `<div style="padding:10px 16px 4px;font-family:var(--font-sans);font-size:10px;font-weight:700;color:#a78bfa;letter-spacing:0.1em;text-transform:uppercase;border-top:1px solid var(--border);margin-top:6px">🖥 Local · On-device (WebGPU)</div>` +
+      localHtml +
+      `<div style="padding:8px 16px 12px;font-family:var(--font-sans);font-size:11px;color:var(--text3);line-height:1.5">Downloads once, cached in your browser forever. Requires WebGPU.</div>`;
+  }
 }
 
 function openModelSheet() {
@@ -3178,6 +3458,17 @@ function selectModel(name, el) {
   closeModelSheet();
   _updateModelPillLabel();
   haptic();
+}
+
+function removeApiKeyAndSwitchFree() {
+  customApiKey = null;
+  lsSet('customApiKey', null);
+  _selectedApiModel = null;
+  closeModelSheet();
+  _updateApiKeySettingsSub();
+  _updateModelPillLabel();
+  showToast('🔄 Switched to Pollinations (free)');
+  haptic && haptic();
 }
 
 function selectCloudModel(modelId) {
@@ -3327,19 +3618,36 @@ async function generateImage(prompt) {
     }
   }
 
-  // ── FLUX.1-schnell free fallback (anonymous, no token needed) ──
-  const res = await fetch('https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-wait-for-model': 'true' },
-    body: JSON.stringify({ inputs: prompt }),
-    signal: sig
-  });
-  if (!res.ok) {
-    const err = await res.text().catch(() => '');
-    throw new Error('Image generation failed: ' + res.status + ' ' + err.slice(0,100));
+  // ── Pollinations free image (no key, no CORS, reliable) ──
+  try {
+    const polUrl = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt) + '?width=1024&height=1024&nologo=true&model=flux';
+    const polRes = await fetch(polUrl, { signal: sig });
+    if (polRes.ok) {
+      const blob = await polRes.blob();
+      if (blob.size > 1000) return URL.createObjectURL(blob);
+    }
+  } catch(e2) {
+    if (e2.name === 'AbortError') throw e2;
   }
-  const blob = await res.blob();
-  return URL.createObjectURL(blob);
+
+  // ── FLUX.1-schnell via HuggingFace (last resort) ──
+  try {
+    const hfRes = await fetch('https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-wait-for-model': 'true' },
+      body: JSON.stringify({ inputs: prompt }),
+      signal: sig
+    });
+    if (hfRes.ok) {
+      const blob = await hfRes.blob();
+      return URL.createObjectURL(blob);
+    }
+    const err = await hfRes.text().catch(() => '');
+    throw new Error('Image generation failed: ' + hfRes.status + ' ' + err.slice(0,100));
+  } catch(e3) {
+    if (e3.name === 'AbortError') throw e3;
+    throw new Error('Image generation failed — check your internet connection');
+  }
 }
 
 /* ══════════════════════════════════════════
@@ -3451,10 +3759,10 @@ function buildSystemPrompt(modelName) {
 
 /* Map each Helix persona to a fast free-cloud model */
 const ONLINE_MODELS = {
-  'Azur': { model:'openai-large',    label:'GPT-4.1 · Cloud'       },
-  'Pyre': { model:'deepseek-reasoner', label:'DeepSeek-R1 · Cloud' },
-  'Quar': { model:'openai',          label:'GPT-4o · Cloud'        },
-  'Jade': { model:'qwen-coder',      label:'Qwen-Coder · Cloud'    },
+  'Azur': { model:'llama',           label:'Llama 4 Scout · Cloud'     },
+  'Pyre': { model:'gemini',          label:'Gemini 2.5 Flash Lite · Cloud' },
+  'Quar': { model:'openai',          label:'GPT-5.4 Nano · Cloud'      },
+  'Jade': { model:'qwen-coder',      label:'Qwen3 Coder · Cloud'       },
 };
 
 /* Fastest quantised on-device models for offline */
@@ -3514,6 +3822,12 @@ async function callAPI(userMessage, attachment, onChunk, systemAddendum) {
   let reply = null;
 
   // ── CUSTOM API KEY — highest priority ──
+  // Reconstruct key from apiKeys store if the saved customApiKey is missing its key field
+  if (customApiKey && customApiKey.provider && !customApiKey.key) {
+    const savedKey = apiKeys[customApiKey.provider];
+    if (savedKey) customApiKey = { ...customApiKey, key: savedKey };
+    else customApiKey = null; // key was removed, fall through
+  }
   if (customApiKey && customApiKey.key && customApiKey.model) {
     try {
       _showInferenceBadge('custom');
@@ -3535,7 +3849,11 @@ async function callAPI(userMessage, attachment, onChunk, systemAddendum) {
         reply = await _callOnline(messages, useStream, onChunk, sig);
       } catch(e) {
         if (e.name === 'AbortError') throw e;
-        if (pollinationsMode === 'cloud') throw e;
+        // Never silently fall back to WebLLM when:
+        // 1. mode is explicitly 'cloud'
+        // 2. user has explicitly picked a cloud model
+        // 3. local engine is not already loaded (would trigger an unexpected multi-GB download)
+        if (pollinationsMode === 'cloud' || selectedCloudModelId || !_webllmEngine) throw e;
         console.warn('[callAPI] Cloud failed, fallback to local:', e.message);
         _showInferenceBadge('local');
         reply = await _callWebLLM(messages, useStream, onChunk, sig);
@@ -3596,8 +3914,54 @@ function _showInferenceBadge(mode) {
 
 /* ══════════════════════════════════════════
    ONLINE — Pollinations.ai (free, no auth, streaming)
-   With optional account for higher limits
+   Multi-endpoint fallback — always anonymous, no key required
 ══════════════════════════════════════════ */
+
+/* Free anonymous endpoints, tried in order until one succeeds */
+const _FREE_ENDPOINTS = [
+  'https://text.pollinations.ai/openai',
+  'https://api.pollinations.ai/v1/chat/completions',
+  'https://gen.pollinations.ai/v1/chat/completions',
+];
+
+async function _tryFetchCloud(bodyObj, sig) {
+  // Build anonymous headers (no auth needed for free tier)
+  const headers = {
+    'Content-Type': 'application/json',
+    'Origin': location.origin || 'https://helix.local',
+    'Referer': location.href || 'https://helix.local/',
+  };
+  // If user voluntarily added a Pollinations key, use it (unlocks higher limits)
+  const _pollKey = (apiKeys && apiKeys['pollinations']) ? apiKeys['pollinations'].trim() : '';
+  if (_pollKey) headers['Authorization'] = 'Bearer ' + _pollKey;
+
+  let lastErr = null;
+  for (const endpoint of _FREE_ENDPOINTS) {
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(bodyObj),
+        signal: sig,
+      });
+      if (res.ok) return res;
+      // "balance too low" / 402 / 429 → try next endpoint
+      const errText = await res.text().catch(() => res.statusText);
+      const lower = errText.toLowerCase();
+      if (res.status === 402 || lower.includes('balance') || lower.includes('credit') || res.status === 429) {
+        lastErr = new Error(`${endpoint} ${res.status}: ${errText.slice(0,80)}`);
+        continue; // try next
+      }
+      // Other HTTP errors — still try next endpoint
+      lastErr = new Error(`${endpoint} ${res.status}: ${errText.slice(0,80)}`);
+    } catch(e) {
+      if (e.name === 'AbortError') throw e;
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error('All free cloud endpoints failed');
+}
+
 async function _callOnline(messages, stream, onChunk, sig) {
   const cfg   = ONLINE_MODELS[currentModel] || { model:'openai' };
   // Allow user to override the cloud model via selector
@@ -3612,20 +3976,16 @@ async function _callOnline(messages, stream, onChunk, sig) {
     stream,
     max_tokens: ls('aiMaxTokens', 4096),
     temperature: ls('aiTemperature', 0.72),
+    seed: Math.floor(Math.random() * 999999), // avoid proxy caching
   };
 
   _showInferenceBadge('cloud');
 
-  const res = await fetch('https://text.pollinations.ai/openai', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(bodyObj),
-    signal: sig
-  });
+  const res = await _tryFetchCloud(bodyObj, sig);
 
   if (!res.ok) {
     const err = await res.text().catch(() => res.statusText);
-    throw new Error(`Pollinations ${res.status}: ${err.slice(0,120)}`);
+    throw new Error(`Cloud ${res.status}: ${err.slice(0,120)}`);
   }
 
   if (stream) {
@@ -4022,15 +4382,20 @@ async function sendMsg() {
   // Free users: inject DDG results as context addendum
   let searchAddendum = '';
   if (searchEnabled && txt && !attachment) {
+    const searchDate = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
     try {
       const results = await doWebSearch(txt);
       if (results.length) {
-        const searchDate = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
         searchAddendum = '\n\n[WEB SEARCH RESULTS — searched on ' + searchDate + ' for: "' + txt + '"]\n' +
           results.map((r, i) => `${i+1}. ${r.title}\n   ${r.snippet}${r.url ? '\n   Source: ' + r.url : ''}`).join('\n\n') +
-          '\n[Use the above search results to answer accurately. The search was performed TODAY (' + searchDate + '). Cite the source when quoting facts. Never invent data that is not in the results.]';
+          '\n[Use the above search results to answer accurately. The search was performed TODAY (' + searchDate + '). Cite sources when quoting facts. IMPORTANT: Never say you cannot browse the web — the live search above has already been done for you.]';
+      } else {
+        searchAddendum = '\n\n[WEB SEARCH: A live web search was performed for "' + txt + '" on ' + searchDate + ' but returned no results. Answer using your training knowledge and acknowledge results may not be current. IMPORTANT: Do NOT say you cannot browse the internet — a search was attempted but returned nothing.]';
       }
-    } catch(e) { console.warn('[sendMsg] search failed:', e); }
+    } catch(e) {
+      searchAddendum = '\n\n[WEB SEARCH: Attempted on ' + searchDate + ' but encountered an error. Answer using your training knowledge and acknowledge you could not retrieve live data.]';
+      console.warn('[sendMsg] search failed:', e);
+    }
   }
 
   let streamingDiv   = null;
@@ -4048,11 +4413,11 @@ async function sendMsg() {
       _rafPending = false;
       if (!streamingText || accText === _lastRendered) return;
       _lastRendered = accText;
-      const safeText = accText
+      const safeText = stripPollinationsNotice(accText
         .replace(/<artifact[^>]*>[\s\S]*?<\/artifact>/g, '[artifact]')
         .replace(/<artifact[^>]*>[\s\S]*$/, '[generating artifact…]')
         .replace(/<think>[\s\S]*?<\/think>/g, '')
-        .replace(/<think>[\s\S]*$/, '');
+        .replace(/<think>[\s\S]*$/, ''));
       try {
         streamingText.innerHTML = safeParse(safeText) + '<span class="streaming-cursor"></span>';
       } catch(e) {
@@ -4092,7 +4457,7 @@ async function sendMsg() {
     // Streaming complete — remove live div, render final
     if (streamingDiv) streamingDiv.remove();
     removeTyping();
-    const { text, artifacts } = parseResponse(rawReply);
+    const { text, artifacts } = parseResponse(stripPollinationsNotice(rawReply));
     addMsg('ai', text, false, artifacts);
     if (autoSpeak && text) speakText(text, null);
     saveCurrentChat();
@@ -4139,19 +4504,21 @@ function addUserMsg(text, attachment, silent) {
   }
   if (text) inner += escHtml(text).replace(/\n/g,'<br>');
   const msgText = text || '';
-  d.innerHTML = `<div class="msg-user-wrap">
+  const nowTs = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  d.innerHTML = `<div class="msg-user-wrap" onclick="toggleUserActions(this.querySelector('.msg-user'));this.classList.toggle('ts-show')">
+    <div class="msg-user"><div class="bubble">${inner}</div></div>
     <div class="user-actions" id="uact_${Date.now()}">
-      <button class="user-act-btn" title="Copy" onclick="copyUserMsg(this)" data-text="${escAttr(msgText)}">
+      <button class="user-act-btn" title="Copy" onclick="event.stopPropagation();copyUserMsg(this)" data-text="${escAttr(msgText)}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
       </button>
-      <button class="user-act-btn" title="Resend" onclick="resendUserMsg(this)" data-text="${escAttr(msgText)}">
+      <button class="user-act-btn" title="Resend" onclick="event.stopPropagation();resendUserMsg(this)" data-text="${escAttr(msgText)}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.18"/></svg>
       </button>
-      <button class="user-act-btn" title="Edit" onclick="editUserMsg(this)" data-text="${escAttr(msgText)}">
+      <button class="user-act-btn" title="Edit" onclick="event.stopPropagation();editUserMsg(this)" data-text="${escAttr(msgText)}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       </button>
     </div>
-    <div class="msg-user" onclick="toggleUserActions(this)"><div class="bubble">${inner}</div></div>
+    <div class="msg-timestamp">${nowTs}</div>
   </div>`;
   c.appendChild(d);
   if (!silent) scrollBottom();
@@ -4340,6 +4707,19 @@ function addProRequiredMsg() {
 
 function removeTyping() { const t = document.getElementById('typingMsg'); if (t) t.remove(); }
 function scrollBottom()  { const b = document.getElementById('chatBody'); b.scrollTop = b.scrollHeight; }
+
+/* ── Scroll-to-bottom FAB ── */
+function hideScrollFab() { document.getElementById('scrollFab')?.classList.remove('visible'); }
+function _initScrollFab() {
+  const body = document.getElementById('chatBody');
+  if (!body) return;
+  body.addEventListener('scroll', () => {
+    const fab = document.getElementById('scrollFab');
+    if (!fab) return;
+    const atBottom = body.scrollTop >= body.scrollHeight - body.clientHeight - 80;
+    fab.classList.toggle('visible', !atBottom && body.scrollHeight > body.clientHeight + 200);
+  }, { passive:true });
+}
 function escHtml(s)      { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escAttr(s)      { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -4397,7 +4777,7 @@ document.addEventListener('click', e => {
     _activeUserActions.classList.remove('show');
     _activeUserActions = null;
   }
-}, true);
+});
 
 function copyUserMsg(btn) {
   const text = btn.getAttribute('data-text');
@@ -4412,13 +4792,31 @@ function copyUserMsg(btn) {
 function resendUserMsg(btn) {
   const text = btn.getAttribute('data-text');
   if (!text || isTyping) return;
+
+  // Remove this user message + everything after it (same logic as editUserMsg),
+  // then re-send so we get a fresh response instead of a duplicate new message.
+  const msgAnim = btn.closest('.msg-anim');
+  const messagesEl = document.getElementById('messages');
+  const allMsgs = Array.from(messagesEl.children);
+  const wrapIdx = allMsgs.indexOf(msgAnim);
+
+  if (wrapIdx >= 0) {
+    let userMsgsBefore = 0;
+    for (let i = 0; i < wrapIdx; i++) {
+      if (allMsgs[i].querySelector('.msg-user-wrap')) userMsgsBefore++;
+    }
+    for (let i = allMsgs.length - 1; i >= wrapIdx; i--) {
+      allMsgs[i].remove();
+    }
+    conversationHistory = conversationHistory.slice(0, userMsgsBefore * 2);
+    lastImagePrompt = null;
+    if (!messagesEl.children.length) showEmptyState();
+  }
+
+  _activeUserActions = null;
   const inp = document.getElementById('msgInput');
   inp.value = text;
   handleInput(inp);
-  // Close the actions
-  const wrap = btn.closest('.msg-user-wrap');
-  wrap?.querySelector('.user-actions')?.classList.remove('show');
-  _activeUserActions = null;
   sendMsg();
 }
 
@@ -4902,7 +5300,7 @@ function closeApiKeySheet() {
 let _akActiveTab = 'ai';
 function _akSwitchTab(tab) {
   _akActiveTab = tab;
-  ['ai','search','image','advanced'].forEach(t => {
+  ['ai','search','image','tts','advanced'].forEach(t => {
     const panel = document.getElementById('akPanel_' + t);
     const btn   = document.getElementById('akTab_' + t);
     if (!panel || !btn) return;
@@ -4911,52 +5309,75 @@ function _akSwitchTab(tab) {
     btn.style.color = active ? 'var(--accent)' : 'var(--text3)';
     btn.style.borderBottomColor = active ? 'var(--accent)' : 'transparent';
   });
-  if (tab === 'search') _refreshSearchTab();
-  if (tab === 'image')  _refreshImageTab();
+  if (tab === 'search')   _refreshSearchTab();
+  if (tab === 'image')    _refreshImageTab();
+  if (tab === 'tts')      _refreshTtsTab();
   if (tab === 'advanced') _refreshAdvancedTab();
 }
 
 function _refreshSearchTab() {
-  const bk = ls('braveSearchKey','');
-  const sk = ls('serperKey','');
-  const bi = document.getElementById('braveKeyInput');
-  const si = document.getElementById('serperKeyInput');
+  const bk  = ls('braveSearchKey','');
+  const sk  = ls('serperKey','');
+  const tk  = ls('tavilyKey','');
+  const sak = ls('serpApiKey','');
+  const ek  = ls('exaKey','');
+  const bi  = document.getElementById('braveKeyInput');
+  const si  = document.getElementById('serperKeyInput');
+  const ti  = document.getElementById('tavilyKeyInput');
+  const sai = document.getElementById('serpApiKeyInput');
+  const ei  = document.getElementById('exaKeyInput');
   if (bi) bi.value = bk;
   if (si) si.value = sk;
-  const bst = document.getElementById('braveKeyStatus');
-  const sst = document.getElementById('serperKeyStatus');
-  if (bst) { bst.textContent = bk ? '✅ Set' : ''; bst.style.color = '#30d158'; }
-  if (sst) { sst.textContent = sk ? '✅ Set' : ''; sst.style.color = '#30d158'; }
+  if (ti) ti.value = tk;
+  if (sai) sai.value = sak;
+  if (ei) ei.value = ek;
+  const _st = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = val ? '✅ Set' : ''; el.style.color = '#30d158'; }
+  };
+  _st('braveKeyStatus', bk); _st('serperKeyStatus', sk);
+  _st('tavilyKeyStatus', tk); _st('serpApiKeyStatus', sak); _st('exaKeyStatus', ek);
   const ind = document.getElementById('searchSourceIndicator');
   if (ind) {
     if (bk)      ind.textContent = '🦁 Active: Brave Search API (best quality)';
+    else if (tk) ind.textContent = '🧭 Active: Tavily AI Search (optimized for AI)';
     else if (sk) ind.textContent = '🔍 Active: Serper.dev (Google results)';
-    else         ind.textContent = '🦆 Active: DuckDuckGo via CORS proxy (free, may be slower)';
-    ind.style.color = (bk || sk) ? '#30d158' : 'var(--text3)';
+    else if (sak) ind.textContent = '🐍 Active: SerpAPI (multi-engine)';
+    else if (ek) ind.textContent = '⚡ Active: Exa Neural Search (semantic)';
+    else         ind.textContent = '🦆 Active: DuckDuckGo via CORS proxy (free, may be slow)';
+    ind.style.color = (bk || sk || tk || sak || ek) ? '#30d158' : 'var(--text3)';
   }
 }
 
-function saveBraveKey(val) {
-  lsSet('braveSearchKey', val.trim());
-  _refreshSearchTab();
-}
-
-function saveSerperKey(val) {
-  lsSet('serperKey', val.trim());
-  _refreshSearchTab();
-}
+function saveBraveKey(val)   { lsSet('braveSearchKey', val.trim()); _refreshSearchTab(); }
+function saveSerperKey(val)  { lsSet('serperKey', val.trim()); _refreshSearchTab(); }
+function saveTavilyKey(val)  { lsSet('tavilyKey', val.trim()); _refreshSearchTab(); }
+function saveSerpApiKey(val) { lsSet('serpApiKey', val.trim()); _refreshSearchTab(); }
+function saveExaKey(val)     { lsSet('exaKey', val.trim()); _refreshSearchTab(); }
 
 function _refreshImageTab() {
   const hft = ls('hfToken','');
+  const stab = ls('stabilityKey','');
+  const falk = ls('falKey','');
   const inp = document.getElementById('hfTokenInputSheet');
   if (inp) inp.value = hft;
+  const stabInp = document.getElementById('stabilityKeyInput');
+  if (stabInp) stabInp.value = stab;
+  const falInp = document.getElementById('falKeyInput');
+  if (falInp) falInp.value = falk;
+  // status text
   const sta = document.getElementById('hfTokenSheetStatus');
   if (sta) {
     if (hft) { sta.textContent = '✅ FLUX.1-dev active'; sta.style.color = '#30d158'; }
     else     { sta.textContent = 'No token — using FLUX.1-schnell (free)'; sta.style.color = 'var(--text3)'; }
   }
+  const stabSt = document.getElementById('stabilityKeyStatus');
+  if (stabSt) { stabSt.textContent = stab ? '✅ Set' : ''; stabSt.style.color = '#30d158'; }
+  const falSt = document.getElementById('falKeyStatus');
+  if (falSt) { falSt.textContent = falk ? '✅ Set' : ''; falSt.style.color = '#30d158'; }
+
   const pref = ls('imageModelPref','flux_schnell');
-  ['flux_dev','flux_schnell'].forEach(id => {
+  ['flux_dev','flux_schnell','sd35','fal_flux_pro','dalle3'].forEach(id => {
     const el = document.getElementById('imgModel_' + id);
     if (!el) return;
     const sel = pref === id;
@@ -4967,10 +5388,20 @@ function _refreshImageTab() {
   });
 }
 
+function saveStabilityKey(val) { lsSet('stabilityKey', val.trim()); _refreshImageTab(); }
+function saveFalKey(val)       { lsSet('falKey', val.trim()); _refreshImageTab(); }
+
 function setImageModel(id) {
   lsSet('imageModelPref', id);
   _refreshImageTab();
-  showToast(id === 'flux_dev' ? '✨ FLUX.1-dev selected (needs HF token)' : '⚡ FLUX.1-schnell selected');
+  const labels = {
+    flux_dev:      '✨ FLUX.1-dev selected (requires HF token)',
+    flux_schnell:  '⚡ FLUX.1-schnell selected (free)',
+    sd35:          '🎨 Stable Diffusion 3.5 selected (requires Stability key)',
+    fal_flux_pro:  '⚡ FLUX.1-pro (fal.ai) selected',
+    dalle3:        '🖼 DALL-E 3 selected (requires OpenAI key)',
+  };
+  showToast(labels[id] || id);
 }
 
 function _refreshAdvancedTab() {
@@ -4994,14 +5425,275 @@ function resetAdvancedSettings() {
   showToast('Advanced settings reset');
 }
 
+/* ══════════════════════════════════════════
+   TTS PROVIDER SYSTEM
+══════════════════════════════════════════ */
+const TTS_PROVIDERS = {
+  none:       { name:'Kokoro / WebSpeech', keyPlaceholder:'', info:'', needsKey:false, needsVoiceId:false },
+  elevenlabs: {
+    name:'ElevenLabs', keyPlaceholder:'sk_…',
+    info:'Get the key at <a href="https://elevenlabs.io" target="_blank" style="color:var(--accent)">elevenlabs.io</a> · 10k chars/month free',
+    needsKey:true, needsVoiceId:true,
+    voiceIdInfo:'Find Voice ID in your ElevenLabs account or use: Rachel=21m00Tcm4TlvDq8ikWAM · Adam=pNInz6obpgDQGcFmaJgB',
+  },
+  openai: {
+    name:'OpenAI TTS', keyPlaceholder:'sk-…',
+    info:'Use your OpenAI key · ~$0.015/1k chars for tts-1 · <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--accent)">platform.openai.com</a>',
+    needsKey:true, needsVoiceId:false,
+  },
+  deepgram: {
+    name:'Deepgram Aura', keyPlaceholder:'Deepgram token…',
+    info:'Get key at <a href="https://console.deepgram.com" target="_blank" style="color:var(--accent)">console.deepgram.com</a> · $200 free credits',
+    needsKey:true, needsVoiceId:false,
+  },
+  fishaudio: {
+    name:'Fish Audio', keyPlaceholder:'your-fish-audio-key',
+    info:'Get key at <a href="https://fish.audio" target="_blank" style="color:var(--accent)">fish.audio</a> · 10k chars free',
+    needsKey:true, needsVoiceId:true,
+    voiceIdInfo:'Reference Model ID from the Fish Audio catalogue. Leave empty for the default voice.',
+  },
+};
+
+let _customTtsProvider = ls('customTtsProvider', 'none');
+
+function _refreshTtsTab() {
+  _customTtsProvider = ls('customTtsProvider', 'none');
+  // Highlight active provider
+  Object.keys(TTS_PROVIDERS).forEach(id => {
+    const row = document.getElementById('ttsProv_' + id);
+    const chk = document.getElementById('ttsCheck_' + id);
+    if (!row || !chk) return;
+    const sel = _customTtsProvider === id;
+    row.style.borderColor = sel ? 'var(--accent)' : 'var(--border)';
+    row.style.background  = sel ? 'rgba(var(--accentRgb),0.08)' : 'var(--surface)';
+    chk.style.opacity = sel ? '1' : '0';
+    if (chk.style.opacity === '1') chk.style.background = 'var(--accent)';
+  });
+
+  const prov = TTS_PROVIDERS[_customTtsProvider] || TTS_PROVIDERS.none;
+  const keySection = document.getElementById('ttsKeySection');
+  const keyInput   = document.getElementById('ttsKeyInput');
+  const keyInfo    = document.getElementById('ttsKeyInfo');
+  const vidSection = document.getElementById('ttsVoiceIdSection');
+  const vidInput   = document.getElementById('ttsVoiceIdInput');
+  const vidInfo    = document.getElementById('ttsVoiceIdInfo');
+  const oaVoiceSec = document.getElementById('ttsOpenAiVoiceSection');
+  const oaModelSec = document.getElementById('ttsOpenAiModelSection');
+  const dgVoiceSec = document.getElementById('ttsDeepgramVoiceSection');
+
+  // Hide/show sections
+  if (keySection) keySection.style.display = (prov.needsKey) ? 'block' : 'none';
+  if (keyInput && prov.needsKey) {
+    keyInput.placeholder = prov.keyPlaceholder || '';
+    keyInput.value = ls('ttsKey_' + _customTtsProvider, '');
+  }
+  if (keyInfo) keyInfo.innerHTML = prov.info || '';
+  if (vidSection) vidSection.style.display = (prov.needsVoiceId) ? 'block' : 'none';
+  if (vidInput && prov.needsVoiceId) vidInput.value = ls('ttsVoiceId_' + _customTtsProvider, '');
+  if (vidInfo) vidInfo.textContent = prov.voiceIdInfo || '';
+  if (oaVoiceSec)  oaVoiceSec.style.display  = _customTtsProvider === 'openai' ? 'block' : 'none';
+  if (oaModelSec)  oaModelSec.style.display  = _customTtsProvider === 'openai' ? 'block' : 'none';
+  if (dgVoiceSec)  dgVoiceSec.style.display  = _customTtsProvider === 'deepgram' ? 'block' : 'none';
+
+  // Restore openai voice/model selection
+  if (_customTtsProvider === 'openai') {
+    const savedVoice = ls('ttsOpenAiVoice', 'alloy');
+    const savedModel = ls('ttsOpenAiModel', 'tts-1');
+    _highlightTtsOpenAiVoice(savedVoice);
+    _highlightTtsOpenAiModel(savedModel);
+  }
+  if (_customTtsProvider === 'deepgram') {
+    const savedDgVoice = ls('ttsDeepgramVoice', 'aura-asteria-en');
+    _highlightTtsDeepgramVoice(savedDgVoice);
+  }
+
+  // Status banner
+  const banner = document.getElementById('ttsStatusBanner');
+  if (banner) {
+    const savedKey = ls('ttsKey_' + _customTtsProvider, '');
+    if (_customTtsProvider !== 'none' && savedKey) {
+      banner.style.display = 'block';
+      banner.style.background = 'rgba(48,209,88,0.08)';
+      banner.style.border = '1px solid rgba(48,209,88,0.25)';
+      banner.style.color = '#30d158';
+      banner.textContent = '✅ ' + prov.name + ' active';
+    } else if (_customTtsProvider !== 'none') {
+      banner.style.display = 'block';
+      banner.style.background = 'rgba(255,69,58,0.08)';
+      banner.style.border = '1px solid rgba(255,69,58,0.2)';
+      banner.style.color = 'var(--red)';
+      banner.textContent = '⚠️ Enter the API key to activate ' + prov.name;
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+}
+
+function setTtsProvider(id) {
+  _customTtsProvider = id;
+  lsSet('customTtsProvider', id);
+  _refreshTtsTab();
+  const prov = TTS_PROVIDERS[id];
+  showToast(id === 'none' ? '🔊 TTS: Kokoro / WebSpeech (local)' : '🎙 TTS: ' + (prov?.name || id) + ' selected');
+  haptic && haptic();
+}
+
+function saveTtsKey(val) {
+  lsSet('ttsKey_' + _customTtsProvider, val.trim());
+  _refreshTtsTab();
+}
+
+function saveTtsVoiceId(val) {
+  lsSet('ttsVoiceId_' + _customTtsProvider, val.trim());
+}
+
+function selectTtsOpenAiVoice(voice) {
+  lsSet('ttsOpenAiVoice', voice);
+  _highlightTtsOpenAiVoice(voice);
+  showToast('OpenAI voice: ' + voice);
+}
+
+function _highlightTtsOpenAiVoice(voice) {
+  ['alloy','ash','coral','echo','fable','onyx','nova','shimmer','sage'].forEach(v => {
+    const btn = document.getElementById('ttsOAVoice_' + v);
+    if (!btn) return;
+    const sel = v === voice;
+    btn.style.borderColor = sel ? 'var(--accent)' : 'var(--border)';
+    btn.style.background  = sel ? 'rgba(var(--accentRgb),0.12)' : 'var(--surface)';
+    btn.style.color       = sel ? 'var(--accent)' : 'var(--text2)';
+  });
+}
+
+function selectTtsOpenAiModel(model) {
+  lsSet('ttsOpenAiModel', model);
+  _highlightTtsOpenAiModel(model);
+  showToast('TTS model: ' + model);
+}
+
+function _highlightTtsOpenAiModel(model) {
+  const map = { 'tts-1':'tts1', 'tts-1-hd':'tts1hd', 'gpt-4o-mini-tts':'gpt4omini' };
+  Object.entries(map).forEach(([id, key]) => {
+    const btn = document.getElementById('ttsOAModel_' + key);
+    if (!btn) return;
+    const sel = id === model;
+    btn.style.borderColor = sel ? 'var(--accent)' : 'var(--border)';
+    btn.style.background  = sel ? 'rgba(var(--accentRgb),0.1)' : 'var(--surface)';
+    btn.style.color       = sel ? 'var(--accent)' : 'var(--text2)';
+  });
+}
+
+function selectTtsDeepgramVoice(voice) {
+  lsSet('ttsDeepgramVoice', voice);
+  _highlightTtsDeepgramVoice(voice);
+  showToast('Deepgram voice: ' + voice.replace('aura-','').replace('-en',''));
+}
+
+function _highlightTtsDeepgramVoice(voice) {
+  document.querySelectorAll('[id^="ttsDGVoice_"]').forEach(btn => {
+    const v = btn.id.replace('ttsDGVoice_','').replace(/_/g,'-');
+    const sel = v === voice;
+    btn.style.borderColor = sel ? 'var(--accent)' : 'var(--border)';
+    btn.style.background  = sel ? 'rgba(var(--accentRgb),0.12)' : 'var(--surface)';
+    btn.style.color       = sel ? 'var(--accent)' : 'var(--text2)';
+  });
+}
+
+/* Hook custom TTS into speakText — if a provider is set and has a key, use it */
+const _origSpeakText = typeof speakText !== 'undefined' ? speakText : null;
+
+async function _tryCustomTts(text, btn) {
+  const provId = ls('customTtsProvider', 'none');
+  if (provId === 'none') return false;
+  const key = ls('ttsKey_' + provId, '');
+  if (!key) return false;
+
+  if (btn) { btn.classList.add('speaking'); btn.dataset.speaking = '1'; activeSpeakBtn = btn; }
+  const stopBtn = btn;
+  const _done = () => {
+    currentAudio = null;
+    if (stopBtn) { stopBtn.classList.remove('speaking'); stopBtn.dataset.speaking = ''; }
+    if (activeSpeakBtn === stopBtn) activeSpeakBtn = null;
+  };
+
+  try {
+    let audioUrl = null;
+
+    if (provId === 'elevenlabs') {
+      const voiceId = ls('ttsVoiceId_elevenlabs', '21m00Tcm4TlvDq8ikWAM');
+      const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`, {
+        method:'POST',
+        headers:{ 'xi-api-key': key, 'Content-Type':'application/json', 'Accept':'audio/mpeg' },
+        body: JSON.stringify({ text: text.slice(0,600), model_id:'eleven_turbo_v2_5', voice_settings:{ stability:0.5, similarity_boost:0.8 } })
+      });
+      if (!res.ok) throw new Error('ElevenLabs: ' + res.status);
+      const blob = await res.blob();
+      audioUrl = URL.createObjectURL(blob);
+
+    } else if (provId === 'openai') {
+      const model = ls('ttsOpenAiModel', 'tts-1');
+      const voice = ls('ttsOpenAiVoice', 'alloy');
+      const res = await fetch('https://api.openai.com/v1/audio/speech', {
+        method:'POST',
+        headers:{ 'Authorization':'Bearer ' + key, 'Content-Type':'application/json' },
+        body: JSON.stringify({ model, input: text.slice(0,4096), voice, response_format:'mp3' })
+      });
+      if (!res.ok) throw new Error('OpenAI TTS: ' + res.status);
+      const blob = await res.blob();
+      audioUrl = URL.createObjectURL(blob);
+
+    } else if (provId === 'deepgram') {
+      const dgVoice = ls('ttsDeepgramVoice', 'aura-asteria-en');
+      const res = await fetch(`https://api.deepgram.com/v1/speak?model=${dgVoice}`, {
+        method:'POST',
+        headers:{ 'Authorization':'Token ' + key, 'Content-Type':'application/json' },
+        body: JSON.stringify({ text: text.slice(0,2000) })
+      });
+      if (!res.ok) throw new Error('Deepgram: ' + res.status);
+      const blob = await res.blob();
+      audioUrl = URL.createObjectURL(blob);
+
+    } else if (provId === 'fishaudio') {
+      const voiceId = ls('ttsVoiceId_fishaudio', '');
+      const body = { text: text.slice(0,1000), format:'mp3', mp3_bitrate:128 };
+      if (voiceId) body.reference_id = voiceId;
+      const res = await fetch('https://api.fish.audio/v1/tts', {
+        method:'POST',
+        headers:{ 'Authorization':'Bearer ' + key, 'Content-Type':'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) throw new Error('Fish Audio: ' + res.status);
+      const blob = await res.blob();
+      audioUrl = URL.createObjectURL(blob);
+    }
+
+    if (!audioUrl) return false;
+    if (currentAudio) { try { currentAudio.pause(); } catch(e){} currentAudio = null; }
+    const audio = new Audio(audioUrl);
+    currentAudio = audio;
+    audio.onended = () => { try { URL.revokeObjectURL(audioUrl); } catch(e){} _done(); };
+    audio.onerror = () => { try { URL.revokeObjectURL(audioUrl); } catch(e){} _done(); showToast('⚠️ TTS playback error'); };
+    audio.play().catch(() => { _done(); });
+    return true;
+
+  } catch(e) {
+    _done();
+    showToast('TTS: ' + (e.message || 'error'));
+    return false;
+  }
+}
+
 function _renderApiProviderGrid() {
-  const grid = document.getElementById('apiProviderGrid');
+  const grid = document.getElementById("apiProviderGrid");
   if (!grid) return;
-  grid.innerHTML = Object.entries(PROVIDER_MODELS).map(([id, p]) => `
-    <button class="api-prov-chip${_selectedApiProvider === id ? ' selected' : ''}" onclick="_selectApiProvider('${id}')">
+  grid.innerHTML = Object.entries(PROVIDER_MODELS).map(([id, p]) => {
+    const hasSavedKey = !!apiKeys[id];
+    const isActive = customApiKey && customApiKey.provider === id;
+    return `<button class="api-prov-chip${_selectedApiProvider === id ? " selected" : ""}" onclick="_selectApiProvider('${id}')" style="position:relative">
       <span class="api-prov-icon">${p.icon}</span>
       <span>${p.name}</span>
-    </button>`).join('');
+      ${hasSavedKey ? `<span style="position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:${isActive?"#30d158":"#4ade80"};box-shadow:0 0 4px ${isActive?"#30d158":"#4ade80"}44"></span>` : ""}
+    </button>`;
+  }).join("");
 }
 
 function _selectApiProvider(id) {
@@ -5040,13 +5732,20 @@ function saveApiKey() {
   if (!key) { showToast('Enter an API key first'); return; }
   if (!_selectedApiModel) { showToast('Select a model first'); return; }
   if (key.length < 8) { showToast('API key too short'); return; }
+  const prov = PROVIDER_MODELS[_selectedApiProvider];
+  const modelShort = _selectedApiModel.split('/').pop().slice(0, 20);
+  // Save key for this provider in the per-provider store
+  apiKeys[_selectedApiProvider] = key;
+  lsSet('apiKeys', apiKeys);
+  // Also set as the currently active custom key
   customApiKey = { provider: _selectedApiProvider, key, model: _selectedApiModel };
   lsSet('customApiKey', customApiKey);
   _updateApiKeyStatus();
   _updateApiKeySettingsSub();
   closeApiKeySheet();
   _updateModelPillLabel();
-  showToast('✅ ' + t('apiKeyLabel') + ': ' + (prov?.name || _selectedApiProvider) + ' / ' + modelShort);
+  renderCloudModelSheet && renderCloudModelSheet();
+  showToast('✅ ' + (prov?.name || _selectedApiProvider) + ' key saved · ' + modelShort);
   haptic && haptic();
 }
 
@@ -5072,18 +5771,41 @@ function _initHFTokenInput() {
 }
 
 function removeApiKey() {
-  if (!confirm('Remove API key and return to Pollinations?')) return;
+  if (!customApiKey) return;
+  const provName = PROVIDER_MODELS[customApiKey.provider]?.name || customApiKey.provider;
+  if (!confirm("Remove " + provName + " key?")) return;
+  delete apiKeys[customApiKey.provider];
+  lsSet("apiKeys", apiKeys);
   customApiKey = null;
-  lsSet('customApiKey', null);
+  lsSet("customApiKey", null);
   _updateApiKeyStatus();
   _updateApiKeySettingsSub();
-  // Restore pill to current persona
-  const pillEl = document.getElementById('pillName');
-  if (pillEl) pillEl.textContent = currentModel + ' v' + (MODELS[currentModel]?.version || '1');
+  const pillEl = document.getElementById("pillName");
+  if (pillEl) pillEl.textContent = currentModel + " v" + (MODELS[currentModel]?.version || "1");
   _updateModelPillLabel();
   closeApiKeySheet();
-  showToast('Key removed · Back to Pollinations');
-  renderModelSheet();
+  renderCloudModelSheet && renderCloudModelSheet();
+  showToast(provName + " key removed · Back to free cloud");
+  renderModelSheet && renderModelSheet();
+}
+
+function removeProviderKey(providerId) {
+  const provName = PROVIDER_MODELS[providerId]?.name || providerId;
+  if (!confirm("Remove " + provName + " API key?")) return;
+  delete apiKeys[providerId];
+  lsSet("apiKeys", apiKeys);
+  if (customApiKey && customApiKey.provider === providerId) {
+    customApiKey = null;
+    lsSet("customApiKey", null);
+    _updateApiKeyStatus();
+    _updateApiKeySettingsSub();
+    const pillEl = document.getElementById("pillName");
+    if (pillEl) pillEl.textContent = currentModel + " v" + (MODELS[currentModel]?.version || "1");
+    _updateModelPillLabel();
+  }
+  renderCloudModelSheet && renderCloudModelSheet();
+  _renderApiProviderGrid();
+  showToast(provName + " key removed");
 }
 
 function _updateApiKeyStatus() {
@@ -5236,7 +5958,9 @@ async function _callOpenAICompatible(endpoint, messages, stream, onChunk, sig, k
   const customEp = ls('customEndpoint', '');
   const finalEndpoint = customEp || endpoint;
   const body = { model, messages, stream, max_tokens: ls('aiMaxTokens',4096), temperature: ls('aiTemperature',0.7) };
-  const headers = { 'Content-Type':'application/json', 'Authorization':'Bearer ' + key };
+  const headers = { 'Content-Type':'application/json' };
+  // Only add Authorization header if key is non-empty
+  if (key && key.trim()) headers['Authorization'] = 'Bearer ' + key;
   // OpenRouter extra headers
   if (finalEndpoint.includes('openrouter')) {
     headers['HTTP-Referer'] = location.href;
@@ -5289,10 +6013,43 @@ function _updateVoiceLabels() {
 }
 
 function openVoiceSheet() {
+  _renderTtsLangChips();
   _renderVoiceSheet();
   document.getElementById('vsheetOverlay').classList.add('open');
   document.getElementById('vsheet').classList.add('open');
   haptic && haptic();
+}
+
+function _renderTtsLangChips() {
+  const el = document.getElementById('ttsLangChips');
+  const lbl = document.getElementById('ttsLangLabel');
+  if (!el) return;
+  if (lbl) lbl.textContent = t('ttsVoiceLang');
+  // "Auto" chip + all languages
+  const effectiveTtsLang = ttsLang || sttLang;
+  const chips = [{ code:'', stt:'auto', label:'Auto', flag:'🔁' }, ...LANG_LIST];
+  el.innerHTML = chips.map(l => {
+    const isAuto = l.code === '' && !ttsLang;
+    const isSel  = ttsLang ? l.stt === ttsLang : l.code === '';
+    return `<button onclick="selectTtsLang('${l.stt}')"
+      style="flex-shrink:0;padding:5px 12px;border-radius:20px;border:1.5px solid ${isSel?'var(--accent)':'var(--border)'};
+             background:${isSel?'rgba(var(--accentRgb),0.12)':'var(--surface)'};
+             color:${isSel?'var(--accent)':'var(--text2)'};
+             font-family:var(--font-sans);font-size:12px;font-weight:${isSel?'700':'500'};
+             cursor:pointer;white-space:nowrap;transition:all 0.15s;touch-action:manipulation">
+      ${l.flag} ${l.label || 'Auto'}
+    </button>`;
+  }).join('');
+}
+
+function selectTtsLang(stt) {
+  ttsLang = (stt === 'auto') ? '' : stt;
+  lsSet('ttsLang', ttsLang);
+  _renderTtsLangChips();
+  _renderVoiceSheet();
+  haptic && haptic();
+  const effectiveLang = ttsLang || sttLang;
+  showToast('TTS: ' + (LANG_LIST.find(l => l.stt === effectiveLang)?.label || 'Auto'));
 }
 
 function closeVoiceSheet() {
@@ -5351,21 +6108,24 @@ async function testVoice(id) {
 
 async function _runTestVoice(v, sample, id, _done) {
   if (v.provider === 'ko') {
-    // Only use Kokoro if already loaded — avoid triggering 80MB download on a Test tap
-    if (_kokoroTTS) {
-      try {
-        const url = await _ttsKokoroJS(sample, v.koV);
-        testAudio = new Audio(url);
-        testAudio.onended = () => { URL.revokeObjectURL(url); _done(); };
-        testAudio.onerror = () => { URL.revokeObjectURL(url); _done(); };
-        testAudio.play(); return;
-      } catch(e) { /* fall through to WebSpeech */ }
-    } else {
-      // Kokoro not loaded — preview with WebSpeech, remind user to load it in Studio
-      showToast('⚡ Preview via WebSpeech · Open Kokoro Studio to load the full voice', 4000);
+    // Always use Kokoro — trigger download if needed (with overlay)
+    try {
+      const needsDownload = !_kokoroTTS;
+      if (needsDownload) {
+        showToast('⬇️ Downloading Kokoro to test this voice… (~80MB)', 4000);
+      }
+      await _loadKokoroJSWithOverlay(needsDownload);
+      const url = await _ttsKokoroJS(sample, v.koV);
+      testAudio = new Audio(url);
+      testAudio.onended = () => { URL.revokeObjectURL(url); _done(); };
+      testAudio.onerror = () => { URL.revokeObjectURL(url); _done(); };
+      testAudio.play(); return;
+    } catch(e) {
+      showToast('Kokoro error: ' + (e.message || 'failed'), 4000);
+      _done(); return;
     }
   }
-  // Use WebSpeech directly — fast and reliable
+  // WebSpeech for ws voices
   _wsSpeak(sample, v.wsLang || 'en-US', v.wsGender || 'f', () => { testAudio = null; _done(); });
 }
 
@@ -5373,11 +6133,13 @@ function _renderVoiceSheet() {
   const list = document.getElementById('vsheetList');
   if (!list) return;
   // Determine locale hint for labeling
-  const langEntry = LANG_LIST.find(l => l.code === uiLang) || LANG_LIST[0];
+  const effectiveLang = ttsLang || sttLang;
+  const langEntry = LANG_LIST.find(l => l.stt === effectiveLang || l.code === (effectiveLang||'').slice(0,2)) || LANG_LIST.find(l => l.code === uiLang) || LANG_LIST[0];
   const localeLang = langEntry.label;
 
   // Split voices by relevance: locale-matching first, then other ws, then Kokoro premium
-  const matchVoices = VOICES.filter(v => v.wsLang && v.wsLang.startsWith(sttLang ? sttLang.slice(0,2) : uiLang));
+  const matchLang = (effectiveLang || 'en').slice(0, 2);
+  const matchVoices = VOICES.filter(v => v.wsLang && v.wsLang.toLowerCase().startsWith(matchLang.toLowerCase()));
   const wsOther     = VOICES.filter(v => v.provider==='ws' && !matchVoices.includes(v));
   const koVoices    = VOICES.filter(v => v.provider==='ko' && !matchVoices.includes(v));
   const seVoices    = []; // StreamElements removed
@@ -5451,9 +6213,8 @@ async function _loadKokoroJS() {
         });
       }
       if (!window._KokoroTTS) throw new Error('kokoro-js unavailable — reload the page');
-      showToast('🎙️ Kokoro: starting download… (~80MB, once only)', 6000);
 
-      // Update any visible progress bars in Kokoro Studio
+      // Update Kokoro Studio progress bars
       const _ksUpdateBar = (pct) => {
         const bar = document.getElementById('ksDownloadBar');
         const barWrap = document.getElementById('ksDownloadBarWrap');
@@ -5461,6 +6222,9 @@ async function _loadKokoroJS() {
         if (bar) bar.style.width = pct + '%';
         const label = document.getElementById('ksDownloadLabel');
         if (label) label.textContent = pct < 100 ? `Downloading Kokoro… ${pct}%` : '⚙️ Loading model…';
+        // Also update overlay if visible
+        _kkdlSetPct(pct);
+        _kkdlSetStatus(pct < 100 ? `Downloading voice model… ${pct}%` : 'Loading model into memory…');
       };
 
       _kokoroTTS = await window._KokoroTTS.from_pretrained(
@@ -5472,21 +6236,21 @@ async function _loadKokoroJS() {
             if (p.status === 'downloading' && p.total > 0) {
               const pct = Math.round((p.loaded / p.total) * 100);
               _ksUpdateBar(pct);
-              if (pct % 20 === 0) showToast(`⬇️ Kokoro ${pct}%…`, 3000);
             } else if (p.status === 'loading') {
               _ksUpdateBar(100);
-              showToast('⚙️ Kokoro: loading…', 3000);
             }
           }
         }
       );
       const barWrap2 = document.getElementById('ksDownloadBarWrap');
       if (barWrap2) barWrap2.style.display = 'none';
-      showToast('✅ Kokoro ready!');
+      _kkdlSetStatus('✅ Ready!');
+      setTimeout(() => _hideKokoroDownloadOverlay(), 600);
       return _kokoroTTS;
     } catch(e) {
       _kokoroLoadPromise = null;
       _kokoroTTS = null;
+      _hideKokoroDownloadOverlay();
       showToast('❌ Kokoro: ' + e.message, 5000);
       throw e;
     }
@@ -5650,6 +6414,13 @@ async function speakText(text, btn) {
 
   const clean = cleanForTTS(text).slice(0, 600);
   if (!clean) return;
+
+  // ── Custom cloud TTS (ElevenLabs, OpenAI, Deepgram, Fish Audio) ──
+  const customProvId = ls('customTtsProvider', 'none');
+  if (customProvId !== 'none' && ls('ttsKey_' + customProvId, '')) {
+    await _tryCustomTts(clean, btn);
+    return;
+  }
   if (btn) { btn.classList.add('speaking'); btn.dataset.speaking = '1'; activeSpeakBtn = btn; }
 
   const stopBtn = activeSpeakBtn;
@@ -5661,26 +6432,38 @@ async function speakText(text, btn) {
 
   const v = _getVoice(selectedVoiceId);
 
-  // ── Kokoro premium voices: only use if already loaded, else fall through to WebSpeech ──
+  // ── Kokoro voices: always use Kokoro — download if needed, no WebSpeech fallback ──
   if (v.provider === 'ko') {
-    if (_kokoroTTS) {
+    (async () => {
       try {
-        const url = await _ttsKokoroJS(clean, v.koV);
-        const audio = new Audio(url);
+        const needsDownload = !_kokoroTTS;
+        if (needsDownload) {
+          _kkdlSetTitle('Loading Kokoro Voice');
+          _kkdlSetSub('~80 MB · cached forever · fully local');
+        }
+        const url = await _loadKokoroJSWithOverlay(needsDownload);
+        // Show synthesis animation
+        _kkdlSetTitle('Generating Voice…');
+        _kkdlSetSub('Converting text to speech…');
+        _showKokoroDownloadOverlay();
+        const audioUrl = await _ttsKokoroJS(clean, v.koV);
+        _hideKokoroDownloadOverlay();
+        const audio = new Audio(audioUrl);
         currentAudio = audio;
-        audio.onended = () => { try { URL.revokeObjectURL(url); } catch(e){} currentAudio = null; _done(); };
-        audio.onerror = () => { try { URL.revokeObjectURL(url); } catch(e){} currentAudio = null; _wsSpeak(clean, v.wsLang || 'en-US', v.wsGender || 'f', _done); };
-        audio.play().catch(() => _wsSpeak(clean, v.wsLang || 'en-US', v.wsGender || 'f', _done));
-        return;
+        audio.onended = () => { try { URL.revokeObjectURL(audioUrl); } catch(e){} currentAudio = null; _done(); };
+        audio.onerror = () => { try { URL.revokeObjectURL(audioUrl); } catch(e){} currentAudio = null; _done(); showToast('⚠️ Kokoro playback error'); };
+        audio.play().catch(() => { currentAudio = null; _done(); showToast('⚠️ Kokoro play failed'); });
       } catch(e) {
-        // Kokoro error → fall through to WebSpeech
+        _hideKokoroDownloadOverlay();
+        currentAudio = null; _done();
+        showToast('Kokoro: ' + (e.message || 'error'), 4000);
       }
-    }
-    // Kokoro not yet loaded — use WebSpeech silently (no freeze, no 80MB download)
+    })();
+    return;
   }
 
-  // ── WebSpeech — primary for all 'ws' voices and Kokoro fallback ──
-  _wsSpeak(clean, v.wsLang || 'en-US', v.wsGender || 'f', _done);
+  // ── WebSpeech — for all 'ws' voices ──
+  _wsSpeak(clean, (ttsLang || v.wsLang || 'en-US'), v.wsGender || 'f', _done);
 }
 
 function speakMessage(btn) {
@@ -5813,6 +6596,8 @@ function toggleVoiceInput() {
       document.getElementById('micBtn')?.classList.remove('listening');
       isListening = false;
       showToast('Transcribed ✓');
+      // Auto-send once speech is done
+      setTimeout(() => sendMsg(), 120);
     },
     (err) => {
       showToast('Mic: ' + err);
@@ -6018,12 +6803,27 @@ function vmodeSendToChat() {
 
 async function _vmSpeak(text) {
   return new Promise(async (resolve) => {
-    const v = _getVoice(selectedVoiceId);
     const _done = () => { window._vmCurrentAudio = null; resolve(); };
 
-    // ── Try Kokoro premium if selected ──
+    // ── Custom cloud TTS (ElevenLabs, OpenAI, Deepgram, Fish Audio) ──
+    const customProvId = ls('customTtsProvider', 'none');
+    if (customProvId !== 'none' && ls('ttsKey_' + customProvId, '')) {
+      const ok = await _tryCustomTts(text, null);
+      if (ok) {
+        // wait for audio to finish
+        const poll = setInterval(() => { if (!currentAudio) { clearInterval(poll); resolve(); } }, 200);
+        setTimeout(() => { clearInterval(poll); resolve(); }, 30000); // 30s safety
+        return;
+      }
+    }
+
+    const v = _getVoice(selectedVoiceId);
+
+    // ── Kokoro voices: always use Kokoro — download if needed ──
     if (v.provider === 'ko') {
       try {
+        const needsDownload = !_kokoroTTS;
+        await _loadKokoroJSWithOverlay(needsDownload);
         const url = await _ttsKokoroJS(text, v.koV);
         const audio = new Audio(url);
         window._vmCurrentAudio = audio;
@@ -6035,13 +6835,16 @@ async function _vmSpeak(text) {
           resolve();
         };
         audio.onended = onEnd; audio.onerror = onEnd;
-        audio.play().catch(() => { onEnd(); _wsSpeak(text, v.wsLang || 'en-US', v.wsGender || 'f', resolve); });
+        audio.play().catch(() => { onEnd(); });
         return;
-      } catch(e) { /* Kokoro unavailable, fall through */ }
+      } catch(e) {
+        /* Kokoro error — just resolve, no WebSpeech fallback */
+        _done(); return;
+      }
     }
 
-    // ── WebSpeech (primary for all ws voices and kokoro fallback) ──
-    _wsSpeak(text, v.wsLang || sttLang || 'en-US', v.wsGender || 'f', _done);
+    // ── WebSpeech (primary for all ws voices) ──
+    _wsSpeak(text, (ttsLang || v.wsLang || sttLang || 'en-US'), v.wsGender || 'f', _done);
   });
 }
 
@@ -6186,6 +6989,9 @@ function _applyUiLang() {
   document.querySelectorAll('.vsheet-done').forEach(b => b.textContent = t('done'));
   const langDone = document.getElementById('langDoneBtn');
   if (langDone) langDone.textContent = t('done');
+  // TTS lang label in voice sheet
+  const ttsLblEl = document.getElementById('ttsLangLabel');
+  if (ttsLblEl) ttsLblEl.textContent = t('ttsVoiceLang');
 
   // Preload button
   const preloadBtn = document.getElementById('webllmPreloadBtn');
@@ -6255,7 +7061,7 @@ function copyMsg(btn) {
   const text = btn.getAttribute('data-text');
   navigator.clipboard.writeText(text).then(() => {
     const orig = btn.innerHTML;
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied`;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ${t('copyOk')||'Copied'}`;
     setTimeout(() => btn.innerHTML = orig, 1500);
   }).catch(() => showToast('Copy failed'));
 }
@@ -6421,23 +7227,18 @@ let incognitoMode = false;
 
 function toggleIncognito() {
   incognitoMode = !incognitoMode;
-  const btn    = document.getElementById('incognitoBtn');
-  const banner = document.getElementById('incognitoBanner');
-
+  const btn = document.getElementById('incognitoBtn');
   if (incognitoMode) {
-    // visual cues
-    btn.style.color  = '#a78bfa';
-    btn.style.background = 'rgba(139,92,246,0.12)';
+    btn.style.color = '#a78bfa';
+    btn.style.background = 'rgba(139,92,246,0.15)';
     btn.style.borderRadius = '50%';
-    banner.style.display = 'flex';
-    // start fresh session — clear current chat only
     newChat();
-    showToast('🕵️ Incognito mode on');
+    showToast('🕵️ Incognito on — nessun dato salvato');
   } else {
-    btn.style.color  = '';
+    btn.style.color = '';
     btn.style.background = '';
-    banner.style.display = 'none';
-    showToast('Incognito mode off');
+    btn.style.borderRadius = '';
+    showToast('Incognito off');
   }
   haptic && haptic();
 }
@@ -7038,19 +7839,16 @@ function ksDownloadKokoro() {
 }
 
 async function ksPreloadModel() {
+  if (_kokoroTTS) { showToast('✅ Kokoro already loaded!'); return; }
   const btn = document.getElementById('ksPreloadBtn');
   if (btn) { btn.disabled = true; btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Loading…'; }
-  const barWrap = document.getElementById('ksDownloadBarWrap');
-  if (barWrap) barWrap.style.display = 'block';
   try {
-    await _loadKokoroJS();
-    showToast('✅ Kokoro model ready — tap Generate & Play!');
+    await _loadKokoroJSWithOverlay(true);
+    showToast('✅ Kokoro ready — tap Generate & Play!');
     if (btn) { btn.innerHTML = '✓ Ready'; btn.style.borderColor = 'var(--green)'; btn.style.color = 'var(--green)'; }
   } catch(e) {
     showToast('❌ Download failed: ' + e.message, 4000);
     if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Model'; }
-    const barWrap2 = document.getElementById('ksDownloadBarWrap');
-    if (barWrap2) barWrap2.style.display = 'none';
   }
 }
 
@@ -7340,11 +8138,12 @@ document.head.appendChild(_ksStyleEl);
     <button class="vsheet-done" onclick="closeApiKeySheet()">Done</button>
   </div>
   <!-- Tab bar -->
-  <div style="display:flex;gap:0;border-bottom:1px solid var(--border);flex-shrink:0">
-    <button id="akTab_ai" onclick="_akSwitchTab('ai')" style="flex:1;padding:11px 0;border:none;background:none;font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--accent);border-bottom:2px solid var(--accent);cursor:pointer;transition:all 0.15s">AI</button>
-    <button id="akTab_search" onclick="_akSwitchTab('search')" style="flex:1;padding:11px 0;border:none;background:none;font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;cursor:pointer;transition:all 0.15s">Search</button>
-    <button id="akTab_image" onclick="_akSwitchTab('image')" style="flex:1;padding:11px 0;border:none;background:none;font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;cursor:pointer;transition:all 0.15s">Image</button>
-    <button id="akTab_advanced" onclick="_akSwitchTab('advanced')" style="flex:1;padding:11px 0;border:none;background:none;font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;cursor:pointer;transition:all 0.15s">Advanced</button>
+  <div style="display:flex;gap:0;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch">
+    <button id="akTab_ai" onclick="_akSwitchTab('ai')" style="flex:1;min-width:48px;padding:11px 0;border:none;background:none;font-family:var(--font-sans);font-size:12px;font-weight:600;color:var(--accent);border-bottom:2px solid var(--accent);cursor:pointer;transition:all 0.15s;white-space:nowrap">AI</button>
+    <button id="akTab_search" onclick="_akSwitchTab('search')" style="flex:1;min-width:48px;padding:11px 0;border:none;background:none;font-family:var(--font-sans);font-size:12px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;cursor:pointer;transition:all 0.15s;white-space:nowrap">Search</button>
+    <button id="akTab_image" onclick="_akSwitchTab('image')" style="flex:1;min-width:48px;padding:11px 0;border:none;background:none;font-family:var(--font-sans);font-size:12px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;cursor:pointer;transition:all 0.15s;white-space:nowrap">Image</button>
+    <button id="akTab_tts" onclick="_akSwitchTab('tts')" style="flex:1;min-width:48px;padding:11px 0;border:none;background:none;font-family:var(--font-sans);font-size:12px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;cursor:pointer;transition:all 0.15s;white-space:nowrap">TTS</button>
+    <button id="akTab_advanced" onclick="_akSwitchTab('advanced')" style="flex:1;min-width:56px;padding:11px 0;border:none;background:none;font-family:var(--font-sans);font-size:12px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;cursor:pointer;transition:all 0.15s;white-space:nowrap">Advanced</button>
   </div>
   <div style="overflow-y:auto;flex:1;padding-bottom:40px">
 
@@ -7359,7 +8158,7 @@ document.head.appendChild(_ksStyleEl);
       <!-- Provider picker -->
       <div style="padding:14px 16px 10px">
         <div style="font-family:var(--font-sans);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">AI Provider</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="apiProviderGrid"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px" id="apiProviderGrid"></div>
       </div>
       <!-- API Key input -->
       <div style="padding:0 16px 12px">
@@ -7394,7 +8193,7 @@ document.head.appendChild(_ksStyleEl);
     <!-- ══ TAB: SEARCH ══ -->
     <div id="akPanel_search" style="display:none;padding:14px 16px">
       <div style="font-family:var(--font-sans);font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px;padding:12px;border-radius:12px;background:var(--surface);border:1px solid var(--border)">
-        Add a search API key for better, more reliable web search results. Without a key, Helix falls back to free DuckDuckGo via proxy (may be slower).
+        Add a key for better search results. Without a key, uses DuckDuckGo free via proxy.
       </div>
 
       <!-- Brave Search -->
@@ -7402,7 +8201,7 @@ document.head.appendChild(_ksStyleEl);
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <div>
             <div style="font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--text)">🦁 Brave Search API</div>
-            <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:2px">Free tier: 2,000 queries/month · <a href="https://api.search.brave.com" target="_blank" style="color:var(--accent)">api.search.brave.com</a></div>
+            <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:2px">2,000 queries/month free · <a href="https://api.search.brave.com" target="_blank" style="color:var(--accent)">api.search.brave.com</a></div>
           </div>
           <div id="braveKeyStatus" style="font-size:11px;color:var(--text3)"></div>
         </div>
@@ -7422,7 +8221,7 @@ document.head.appendChild(_ksStyleEl);
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <div>
             <div style="font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--text)">🔍 Serper.dev (Google)</div>
-            <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:2px">Free tier: 2,500 queries · <a href="https://serper.dev" target="_blank" style="color:var(--accent)">serper.dev</a></div>
+            <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:2px">2,500 free queries · <a href="https://serper.dev" target="_blank" style="color:var(--accent)">serper.dev</a></div>
           </div>
           <div id="serperKeyStatus" style="font-size:11px;color:var(--text3)"></div>
         </div>
@@ -7437,6 +8236,66 @@ document.head.appendChild(_ksStyleEl);
         </div>
       </div>
 
+      <!-- Tavily -->
+      <div style="margin-bottom:18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div>
+            <div style="font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--text)">🧭 Tavily (AI Search)</div>
+            <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:2px">1,000 queries/month free · Optimized for AI · <a href="https://tavily.com" target="_blank" style="color:var(--accent)">tavily.com</a></div>
+          </div>
+          <div id="tavilyKeyStatus" style="font-size:11px;color:var(--text3)"></div>
+        </div>
+        <div style="position:relative">
+          <input id="tavilyKeyInput" type="password" placeholder="tvly-…"
+            style="width:100%;padding:13px 50px 13px 14px;border-radius:13px;border:1.5px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font-sans);font-size:14px;outline:none;box-sizing:border-box"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+            oninput="saveTavilyKey(this.value)">
+          <button onclick="this.previousElementSibling.type=this.previousElementSibling.type==='password'?'text':'password'" style="position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- SerpAPI -->
+      <div style="margin-bottom:18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div>
+            <div style="font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--text)">🐍 SerpAPI (Google/Bing/Yahoo)</div>
+            <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:2px">100 queries/month free · Multi-engine · <a href="https://serpapi.com" target="_blank" style="color:var(--accent)">serpapi.com</a></div>
+          </div>
+          <div id="serpApiKeyStatus" style="font-size:11px;color:var(--text3)"></div>
+        </div>
+        <div style="position:relative">
+          <input id="serpApiKeyInput" type="password" placeholder="your-serpapi-key"
+            style="width:100%;padding:13px 50px 13px 14px;border-radius:13px;border:1.5px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font-sans);font-size:14px;outline:none;box-sizing:border-box"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+            oninput="saveSerpApiKey(this.value)">
+          <button onclick="this.previousElementSibling.type=this.previousElementSibling.type==='password'?'text':'password'" style="position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Exa -->
+      <div style="margin-bottom:18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div>
+            <div style="font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--text)">⚡ Exa (Neural Search)</div>
+            <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:2px">1,000 queries/month free · Semantic search · <a href="https://exa.ai" target="_blank" style="color:var(--accent)">exa.ai</a></div>
+          </div>
+          <div id="exaKeyStatus" style="font-size:11px;color:var(--text3)"></div>
+        </div>
+        <div style="position:relative">
+          <input id="exaKeyInput" type="password" placeholder="your-exa-api-key"
+            style="width:100%;padding:13px 50px 13px 14px;border-radius:13px;border:1.5px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font-sans);font-size:14px;outline:none;box-sizing:border-box"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+            oninput="saveExaKey(this.value)">
+          <button onclick="this.previousElementSibling.type=this.previousElementSibling.type==='password'?'text':'password'" style="position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
       <!-- Active search source indicator -->
       <div id="searchSourceIndicator" style="padding:10px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--border);font-family:var(--font-sans);font-size:12px;color:var(--text2);line-height:1.5"></div>
     </div>
@@ -7444,7 +8303,7 @@ document.head.appendChild(_ksStyleEl);
     <!-- ══ TAB: IMAGE ══ -->
     <div id="akPanel_image" style="display:none;padding:14px 16px">
       <div style="font-family:var(--font-sans);font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px;padding:12px;border-radius:12px;background:var(--surface);border:1px solid var(--border)">
-        Add a HuggingFace token to unlock <strong style="color:var(--text)">FLUX.1-dev</strong> — significantly higher image quality than the free model.
+        Choose the image generation provider. Without a key, uses FLUX.1-schnell for free.
       </div>
 
       <!-- HuggingFace Token -->
@@ -7452,7 +8311,7 @@ document.head.appendChild(_ksStyleEl);
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <div>
             <div style="font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--text)">🤗 HuggingFace Token</div>
-            <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:2px">Free · <a href="https://huggingface.co/settings/tokens" target="_blank" style="color:var(--accent)">huggingface.co/settings/tokens</a></div>
+            <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:2px">Free · Unlocks FLUX.1-dev · <a href="https://huggingface.co/settings/tokens" target="_blank" style="color:var(--accent)">huggingface.co/settings/tokens</a></div>
           </div>
         </div>
         <div style="position:relative">
@@ -7467,6 +8326,46 @@ document.head.appendChild(_ksStyleEl);
         <div id="hfTokenSheetStatus" style="font-family:var(--font-sans);font-size:12px;color:var(--text3);margin-top:8px;min-height:18px"></div>
       </div>
 
+      <!-- Stability AI -->
+      <div style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div>
+            <div style="font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--text)">🎨 Stability AI</div>
+            <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:2px">Stable Diffusion 3.5 · Pay-per-use · <a href="https://platform.stability.ai" target="_blank" style="color:var(--accent)">platform.stability.ai</a></div>
+          </div>
+          <div id="stabilityKeyStatus" style="font-size:11px;color:var(--text3)"></div>
+        </div>
+        <div style="position:relative">
+          <input id="stabilityKeyInput" type="password" placeholder="sk-…"
+            style="width:100%;padding:13px 50px 13px 14px;border-radius:13px;border:1.5px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font-sans);font-size:14px;outline:none;box-sizing:border-box"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+            oninput="saveStabilityKey(this.value)">
+          <button onclick="this.previousElementSibling.type=this.previousElementSibling.type==='password'?'text':'password'" style="position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- fal.ai -->
+      <div style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div>
+            <div style="font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--text)">⚡ fal.ai</div>
+            <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:2px">FLUX ultra-fast · $1 free credit · <a href="https://fal.ai" target="_blank" style="color:var(--accent)">fal.ai</a></div>
+          </div>
+          <div id="falKeyStatus" style="font-size:11px;color:var(--text3)"></div>
+        </div>
+        <div style="position:relative">
+          <input id="falKeyInput" type="password" placeholder="fal-…"
+            style="width:100%;padding:13px 50px 13px 14px;border-radius:13px;border:1.5px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font-sans);font-size:14px;outline:none;box-sizing:border-box"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+            oninput="saveFalKey(this.value)">
+          <button onclick="this.previousElementSibling.type=this.previousElementSibling.type==='password'?'text':'password'" style="position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
       <!-- Image model preference -->
       <div style="margin-bottom:16px">
         <div style="font-family:var(--font-sans);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Image Model</div>
@@ -7474,19 +8373,145 @@ document.head.appendChild(_ksStyleEl);
           <div id="imgModel_flux_dev" onclick="setImageModel('flux_dev')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:13px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer">
             <div style="flex:1">
               <div style="font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--text)">FLUX.1-dev ✨</div>
-              <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:1px">Highest quality · Requires HF token</div>
+              <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:1px">Best quality · Requires HF token</div>
             </div>
             <div class="api-model-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
           </div>
           <div id="imgModel_flux_schnell" onclick="setImageModel('flux_schnell')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:13px;border:1.5px solid var(--accent);background:rgba(var(--accentRgb),0.08);cursor:pointer">
             <div style="flex:1">
               <div style="font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--text)">FLUX.1-schnell</div>
-              <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:1px">Free · Fast · No token needed</div>
+              <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:1px">Free · Fast · No key needed</div>
             </div>
             <div class="api-model-check" style="opacity:1;background:var(--accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
           </div>
+          <div id="imgModel_sd35" onclick="setImageModel('sd35')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:13px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer">
+            <div style="flex:1">
+              <div style="font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--text)">Stable Diffusion 3.5 Large 🎨</div>
+              <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:1px">High quality · Requires Stability AI key</div>
+            </div>
+            <div class="api-model-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+          </div>
+          <div id="imgModel_fal_flux_pro" onclick="setImageModel('fal_flux_pro')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:13px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer">
+            <div style="flex:1">
+              <div style="font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--text)">FLUX.1-pro (fal.ai) ⚡</div>
+              <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:1px">Ultra fast · Requires fal.ai key</div>
+            </div>
+            <div class="api-model-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+          </div>
+          <div id="imgModel_dalle3" onclick="setImageModel('dalle3')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:13px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer">
+            <div style="flex:1">
+              <div style="font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--text)">DALL-E 3 (OpenAI) 🖼</div>
+              <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:1px">Excellent prompt following · Requires OpenAI key</div>
+            </div>
+            <div class="api-model-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+          </div>
         </div>
       </div>
+    </div>
+
+    <!-- ══ TAB: TTS ══ -->
+    <div id="akPanel_tts" style="display:none;padding:14px 16px">
+      <div style="font-family:var(--font-sans);font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px;padding:12px;border-radius:12px;background:var(--surface);border:1px solid var(--border)">
+        Add a key to use high-quality cloud TTS voices instead of Kokoro/WebSpeech local.
+      </div>
+
+      <!-- TTS Provider selector -->
+      <div style="font-family:var(--font-sans);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">TTS Provider</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:18px" id="ttsProviderList">
+        <div id="ttsProv_none" onclick="setTtsProvider('none')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:13px;border:1.5px solid var(--accent);background:rgba(var(--accentRgb),0.08);cursor:pointer">
+          <div style="width:32px;height:32px;border-radius:8px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🔊</div>
+          <div style="flex:1">
+            <div style="font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--text)">Kokoro / WebSpeech</div>
+            <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:1px">Default · Free · Local · No key needed</div>
+          </div>
+          <div class="api-model-check" id="ttsCheck_none" style="opacity:1;background:var(--accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+        </div>
+        <div id="ttsProv_elevenlabs" onclick="setTtsProvider('elevenlabs')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:13px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer">
+          <div style="width:32px;height:32px;border-radius:8px;background:rgba(251,191,36,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">⭐</div>
+          <div style="flex:1">
+            <div style="font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--text)">ElevenLabs</div>
+            <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:1px">Top quality · 10k chars/month free · Ultra-realistic voices</div>
+          </div>
+          <div class="api-model-check" id="ttsCheck_elevenlabs" style="opacity:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+        </div>
+        <div id="ttsProv_openai" onclick="setTtsProvider('openai')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:13px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer">
+          <div style="width:32px;height:32px;border-radius:8px;background:rgba(16,163,127,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div>
+          <div style="flex:1">
+            <div style="font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--text)">OpenAI TTS</div>
+            <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:1px">Excellent · Pay-per-use · Uses your OpenAI key</div>
+          </div>
+          <div class="api-model-check" id="ttsCheck_openai" style="opacity:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+        </div>
+        <div id="ttsProv_deepgram" onclick="setTtsProvider('deepgram')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:13px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer">
+          <div style="width:32px;height:32px;border-radius:8px;background:rgba(99,102,241,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🎙</div>
+          <div style="flex:1">
+            <div style="font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--text)">Deepgram Aura</div>
+            <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:1px">Very fast · $200 free credits · Low latency</div>
+          </div>
+          <div class="api-model-check" id="ttsCheck_deepgram" style="opacity:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+        </div>
+        <div id="ttsProv_fishaudio" onclick="setTtsProvider('fishaudio')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:13px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer">
+          <div style="width:32px;height:32px;border-radius:8px;background:rgba(6,182,212,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🐟</div>
+          <div style="flex:1">
+            <div style="font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--text)">Fish Audio</div>
+            <div style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:1px">Multi-language · Voice cloning · 10k chars free</div>
+          </div>
+          <div class="api-model-check" id="ttsCheck_fishaudio" style="opacity:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+        </div>
+      </div>
+
+      <!-- Key input (dynamic) -->
+      <div id="ttsKeySection" style="display:none;margin-bottom:16px">
+        <div style="font-family:var(--font-sans);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">API Key</div>
+        <div style="position:relative">
+          <input id="ttsKeyInput" type="password" placeholder=""
+            style="width:100%;padding:13px 50px 13px 14px;border-radius:13px;border:1.5px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font-sans);font-size:14px;outline:none;box-sizing:border-box"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+            oninput="saveTtsKey(this.value)">
+          <button onclick="this.previousElementSibling.type=this.previousElementSibling.type==='password'?'text':'password'" style="position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div id="ttsKeyInfo" style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:6px;line-height:1.5"></div>
+      </div>
+
+      <!-- Voice ID (ElevenLabs / Fish Audio) -->
+      <div id="ttsVoiceIdSection" style="display:none;margin-bottom:16px">
+        <div style="font-family:var(--font-sans);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Voice ID</div>
+        <input id="ttsVoiceIdInput" type="text" placeholder="e.g. 21m00Tcm4TlvDq8ikWAM"
+          style="width:100%;padding:13px 14px;border-radius:13px;border:1.5px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font-sans);font-size:14px;outline:none;box-sizing:border-box"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+          oninput="saveTtsVoiceId(this.value)">
+        <div id="ttsVoiceIdInfo" style="font-family:var(--font-sans);font-size:11px;color:var(--text3);margin-top:6px;line-height:1.5"></div>
+      </div>
+
+      <!-- OpenAI TTS Voice -->
+      <div id="ttsOpenAiVoiceSection" style="display:none;margin-bottom:16px">
+        <div style="font-family:var(--font-sans);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">OpenAI Voice</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px" id="ttsOpenAiVoiceGrid">
+          ${['alloy','ash','coral','echo','fable','onyx','nova','shimmer','sage'].map(v=>`<button onclick="selectTtsOpenAiVoice('${v}')" id="ttsOAVoice_${v}" style="padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-family:var(--font-sans);font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s">${v}</button>`).join('')}
+        </div>
+      </div>
+
+      <!-- OpenAI TTS Model -->
+      <div id="ttsOpenAiModelSection" style="display:none;margin-bottom:16px">
+        <div style="font-family:var(--font-sans);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">OpenAI TTS Model</div>
+        <div style="display:flex;gap:8px">
+          <button onclick="selectTtsOpenAiModel('tts-1')" id="ttsOAModel_tts1" style="flex:1;padding:10px 0;border-radius:12px;border:1.5px solid var(--accent);background:rgba(var(--accentRgb),0.1);color:var(--accent);font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer">tts-1<br><span style="font-size:10px;font-weight:400;opacity:0.7">Fast</span></button>
+          <button onclick="selectTtsOpenAiModel('tts-1-hd')" id="ttsOAModel_tts1hd" style="flex:1;padding:10px 0;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer">tts-1-hd<br><span style="font-size:10px;font-weight:400;opacity:0.7">High quality</span></button>
+          <button onclick="selectTtsOpenAiModel('gpt-4o-mini-tts')" id="ttsOAModel_gpt4omini" style="flex:1;padding:10px 0;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer">4o-mini-tts<br><span style="font-size:10px;font-weight:400;opacity:0.7">Best</span></button>
+        </div>
+      </div>
+
+      <!-- Deepgram Voice -->
+      <div id="ttsDeepgramVoiceSection" style="display:none;margin-bottom:16px">
+        <div style="font-family:var(--font-sans);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Deepgram Voice</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          ${['aura-asteria-en','aura-luna-en','aura-stella-en','aura-athena-en','aura-hera-en','aura-orion-en','aura-arcas-en','aura-perseus-en','aura-angus-en','aura-orpheus-en','aura-helios-en','aura-zeus-en'].map(v=>`<button onclick="selectTtsDeepgramVoice('${v}')" id="ttsDGVoice_${v.replace(/[^a-z0-9]/g,'_')}" style="padding:6px 12px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-family:var(--font-sans);font-size:11px;cursor:pointer;transition:all 0.15s">${v.replace('aura-','').replace('-en','')}</button>`).join('')}
+        </div>
+      </div>
+
+      <div id="ttsStatusBanner" style="display:none;padding:10px 14px;border-radius:12px;font-family:var(--font-sans);font-size:12px;line-height:1.5;margin-top:4px"></div>
     </div>
 
     <!-- ══ TAB: ADVANCED ══ -->
@@ -7602,7 +8627,7 @@ document.head.appendChild(_ksStyleEl);
 }
 .api-prov-chip.selected { border-color:var(--accent); background:rgba(var(--accentRgb),0.12); color:var(--accent); }
 .api-prov-chip:active { background:var(--surface2); }
-.api-prov-icon { font-size:18px; display:flex; align-items:center; justify-content:center; } .api-prov-icon svg { width:20px; height:20px; }
+.api-prov-icon { font-size:18px; display:flex; align-items:center; justify-content:center; line-height:1; } .api-prov-icon svg { width:20px; height:20px; }
 /* ── API MODEL ROW ── */
 .api-model-row {
   display:flex; align-items:center; gap:12px;
@@ -7619,5 +8644,188 @@ document.head.appendChild(_ksStyleEl);
 </style>
 
 <div class="toast" id="toast"></div>
+<div class="scroll-bottom-fab" id="scrollFab" onclick="scrollBottom();hideScrollFab()" title="Scroll to bottom">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/><polyline points="6 3 12 9 18 3" opacity="0.4"/></svg>
+</div>
+
+<!-- ══ KOKORO TTS DOWNLOAD OVERLAY ══ -->
+<div id="kokoroDownloadOverlay" style="display:none;position:fixed;inset:0;z-index:9800;background:rgba(0,0,0,0.82);backdrop-filter:blur(14px);align-items:center;justify-content:center;flex-direction:column;gap:0">
+  <style>
+  #kokoroDownloadOverlay {
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:0;
+  }
+  #kokoroDownloadOverlay.active { display:flex; }
+  .kkdl-card {
+    background:var(--bg2);
+    border:1px solid var(--border);
+    border-radius:28px;
+    padding:36px 32px 32px;
+    width:min(340px,88vw);
+    display:flex; flex-direction:column; align-items:center; gap:20px;
+    box-shadow:0 24px 72px rgba(0,0,0,0.55);
+    animation:kkdlPop 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  }
+  @keyframes kkdlPop {
+    from{opacity:0;transform:scale(0.82) translateY(24px)}
+    to{opacity:1;transform:scale(1) translateY(0)}
+  }
+  /* Animated sound-wave rings */
+  .kkdl-icon {
+    width:72px; height:72px; position:relative;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .kkdl-ring {
+    position:absolute; border-radius:50%;
+    border:2px solid rgba(212,113,74,0.35);
+    animation:kkdlRing 2s ease-out infinite;
+  }
+  .kkdl-ring:nth-child(1){width:72px;height:72px;animation-delay:0s}
+  .kkdl-ring:nth-child(2){width:54px;height:54px;animation-delay:0.35s}
+  .kkdl-ring:nth-child(3){width:36px;height:36px;animation-delay:0.7s}
+  @keyframes kkdlRing {
+    0%{opacity:0;transform:scale(0.6)} 20%{opacity:1} 100%{opacity:0;transform:scale(1.4)}
+  }
+  .kkdl-core {
+    width:24px;height:24px;border-radius:50%;
+    background:radial-gradient(circle,var(--accent),rgba(212,113,74,0.6));
+    box-shadow:0 0 18px var(--accent);
+    animation:kkdlCorePulse 1.2s ease-in-out infinite alternate;
+  }
+  @keyframes kkdlCorePulse {
+    from{transform:scale(0.9);opacity:0.8} to{transform:scale(1.1);opacity:1}
+  }
+  .kkdl-title {
+    font-family:var(--font-serif); font-size:20px; font-weight:400; font-style:italic;
+    color:var(--text); text-align:center; line-height:1.3; margin-top:4px;
+  }
+  .kkdl-sub {
+    font-family:var(--font-sans); font-size:13px; color:var(--text3);
+    text-align:center; line-height:1.55; margin-top:-6px;
+  }
+  /* Waveform bars progress */
+  .kkdl-wave {
+    display:flex; align-items:flex-end; gap:4px; height:36px;
+    width:100%; justify-content:center;
+  }
+  .kkdl-wave-bar {
+    width:5px; border-radius:3px;
+    background:linear-gradient(to top, rgba(212,113,74,0.4), var(--accent));
+    animation:kkdlWaveIdle 1.8s ease-in-out infinite;
+  }
+  .kkdl-wave-bar:nth-child(1){height:10px;animation-delay:0s}
+  .kkdl-wave-bar:nth-child(2){height:18px;animation-delay:0.15s}
+  .kkdl-wave-bar:nth-child(3){height:28px;animation-delay:0.3s}
+  .kkdl-wave-bar:nth-child(4){height:36px;animation-delay:0.45s}
+  .kkdl-wave-bar:nth-child(5){height:28px;animation-delay:0.3s}
+  .kkdl-wave-bar:nth-child(6){height:18px;animation-delay:0.15s}
+  .kkdl-wave-bar:nth-child(7){height:10px;animation-delay:0s}
+  @keyframes kkdlWaveIdle {
+    0%,100%{transform:scaleY(0.15);opacity:0.4} 50%{transform:scaleY(1);opacity:1}
+  }
+  /* active download state: bars fill up L→R based on progress */
+  .kkdl-bar-track {
+    width:100%; height:4px; background:var(--surface2); border-radius:2px; overflow:hidden;
+  }
+  .kkdl-bar-fill {
+    height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2));
+    border-radius:2px; width:0%; transition:width 0.4s ease;
+  }
+  .kkdl-pct {
+    font-family:var(--font-sans); font-size:12px; font-weight:700; color:var(--accent);
+    min-width:38px; text-align:right;
+  }
+  .kkdl-status {
+    font-family:var(--font-sans); font-size:12px; color:var(--text3);
+    text-align:center; min-height:16px; line-height:1.4;
+  }
+  .kkdl-cancel {
+    padding:8px 22px; border-radius:12px;
+    border:1px solid var(--border); background:transparent;
+    color:var(--text3); font-family:var(--font-sans); font-size:13px;
+    cursor:pointer; transition:all 0.15s;
+  }
+  .kkdl-cancel:active{background:var(--surface);color:var(--text)}
+  </style>
+  <div class="kkdl-card">
+    <div class="kkdl-icon">
+      <div class="kkdl-ring"></div>
+      <div class="kkdl-ring"></div>
+      <div class="kkdl-ring"></div>
+      <div class="kkdl-core"></div>
+    </div>
+    <div class="kkdl-title">Loading Kokoro Voice</div>
+    <div class="kkdl-sub">~80 MB · cached forever · fully local</div>
+    <div class="kkdl-wave">
+      <div class="kkdl-wave-bar"></div><div class="kkdl-wave-bar"></div>
+      <div class="kkdl-wave-bar"></div><div class="kkdl-wave-bar"></div>
+      <div class="kkdl-wave-bar"></div><div class="kkdl-wave-bar"></div>
+      <div class="kkdl-wave-bar"></div>
+    </div>
+    <div style="width:100%;display:flex;align-items:center;gap:10px">
+      <div class="kkdl-bar-track" style="flex:1"><div class="kkdl-bar-fill" id="kkdlBarFill"></div></div>
+      <span class="kkdl-pct" id="kkdlPct">0%</span>
+    </div>
+    <div class="kkdl-status" id="kkdlStatus">Starting download…</div>
+    <button class="kkdl-cancel" onclick="_kkdlCancel()">Cancel</button>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════
+   KOKORO DOWNLOAD OVERLAY CONTROLLER
+══════════════════════════════════════════ */
+let _kkdlCancelFn = null;
+
+function _showKokoroDownloadOverlay() {
+  const ov = document.getElementById('kokoroDownloadOverlay');
+  if (ov) ov.classList.add('active');
+  _kkdlSetPct(0);
+  _kkdlSetStatus('Connecting to model server…');
+}
+
+function _hideKokoroDownloadOverlay() {
+  const ov = document.getElementById('kokoroDownloadOverlay');
+  if (ov) ov.classList.remove('active');
+}
+
+function _kkdlSetPct(pct) {
+  const fill = document.getElementById('kkdlBarFill');
+  const pctEl = document.getElementById('kkdlPct');
+  if (fill) fill.style.width = pct + '%';
+  if (pctEl) pctEl.textContent = pct + '%';
+}
+
+function _kkdlSetStatus(msg) {
+  const el = document.getElementById('kkdlStatus');
+  if (el) el.textContent = msg;
+}
+
+function _kkdlCancel() {
+  _hideKokoroDownloadOverlay();
+  if (typeof _kkdlCancelFn === 'function') _kkdlCancelFn();
+  _kkdlCancelFn = null;
+}
+
+function _kkdlSetTitle(msg) {
+  const el = document.querySelector('.kkdl-title');
+  if (el) el.textContent = msg;
+}
+
+function _kkdlSetSub(msg) {
+  const el = document.querySelector('.kkdl-sub');
+  if (el) el.textContent = msg;
+}
+
+/* Override _loadKokoroJS to hook into the overlay */
+async function _loadKokoroJSWithOverlay(showOverlay = false) {
+  if (_kokoroTTS) return _kokoroTTS;
+  if (showOverlay) _showKokoroDownloadOverlay();
+  return _loadKokoroJS();
+}
+</script>
 </body>
 </html>
